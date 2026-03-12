@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Student MAR - Blockchain ERP</title>
+    <style>
+        :root {
+            --bg: #f4f7f9;
+            --panel: #ffffff;
+            --accent: #1e293b;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-bg: #eff6ff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--accent);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 24px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--secondary-bg);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .logout-btn {
+            margin: 20px;
+            padding: 10px;
+            background: #ef4444;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 15px 30px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* LAYOUT */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+        }
+
+        /* FORM */
+        .form-card {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            padding: 25px;
+            height: fit-content;
+        }
+
+        .form-card h3 {
+            margin-bottom: 20px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--secondary-bg);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--accent);
+            background: #f8fafc;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* TABLE */
+        .table-container {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .hash-tag {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--muted);
+            background: #f1f5f9;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+
+        .doc-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .doc-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading,
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Student Portal</h2>
+            <div style="font-size: 12px; opacity: 0.8;">Blockchain Secured</div>
+        </div>
+        <div class="sidebar-nav">
+            <a class="nav-item" href="student_dashboard.html">Dashboard Home</a>
+            <a class="nav-item" href="student_marks.html">View Marks</a>
+            <a class="nav-item" href="student_attendance.html">View Attendance</a>
+            <a class="nav-item active" href="student_mar.html">MAR Activities</a>
+            <a class="nav-item" href="student_moocs.html">MOOCs Courses</a>
+            <a class="nav-item" href="student_verify.html">Record Verification</a>
+        </div>
+        <div class="logout-btn" onclick="logout()">Log Out</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="topbar">
+            <h2>MAR Activities</h2>
+            <div style="font-size: 13px; color: var(--muted); font-weight: 500;">
+                <span id="welcomeName" style="color: var(--accent); font-weight: 700;">Student</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+
+            <div class="split-layout">
+
+                <!-- SUBMIT FORM -->
+                <div class="form-card">
+                    <h3>Submit New Activity</h3>
+                    <form id="marForm">
+                        <div class="form-group">
+                            <label>Activity Type</label>
+                            <select class="form-control" id="m_type" required>
+                                <option value="">Select Type</option>
+                                <option value="Workshop/Seminar">Workshop/Seminar</option>
+                                <option value="Hackathon">Hackathon</option>
+                                <option value="Sports/Cultural">Sports/Cultural Event</option>
+                                <option value="Publication">Research Publication</option>
+                                <option value="Internship">Internship/Project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Event Name / Title</label>
+                            <input type="text" class="form-control" id="m_name" placeholder="e.g. AI Hackathon 2024"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Activity</label>
+                            <input type="date" class="form-control" id="m_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Proposed Points</label>
+                            <input type="number" class="form-control" id="m_points" min="1" max="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Certificate / Proof Upload</label>
+                            <input type="file" class="form-control" id="m_file" accept=".pdf,.png,.jpg,.jpeg">
+                            <div style="font-size: 11px; margin-top: 4px; color: #94a3b8;">Max size: 5MB. PDF/Images
+                                only.</div>
+                        </div>
+                        <button type="submit" class="submit-btn" id="submitBtn">Save to Blockchain</button>
+                    </form>
+                </div>
+
+                <!-- HISTORY TABLE -->
+                <div class="table-container">
+                    <div class="table-header">Blockchain Records</div>
+                    <table id="marTable">
+                        <thead>
+                            <tr>
+                                <th>Activity Type</th>
+                                <th>Event Name</th>
+                                <th>Date</th>
+                                <th>Points</th>
+                                <th>Proof</th>
+                                <th>Tx Hash</th>
+                            </tr>
+                        </thead>
+                        <tbody id="marBody">
+                            <tr>
+                                <td colspan="6" class="loading">Loading records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const role = localStorage.getItem("role");
+        const email = localStorage.getItem("email");
+        const studentName = localStorage.getItem("username");
+
+        if (!role || role.toLowerCase() !== "student") {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("welcomeName").textContent = studentName || "Student";
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        // FETCH MAR RECORDS
+        async function fetchRecords() {
+            const tbody = document.getElementById("marBody");
+            try {
+                const res = await fetch(window.location.origin + `/api/student/mar/list?email=${encodeURIComponent(email)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    tbody.innerHTML = "";
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No MAR activities submitted yet.</td></tr>`;
+                        return;
+                    }
+
+                    data.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0)); // newest first
+
+                    data.forEach(item => {
+                        const tr = document.createElement("tr");
+                        const hashDisplay = item.hash ? item.hash.substring(0, 8) + '...' : '--';
+
+                        let fileLink = '--';
+                        if (item.filePath) {
+                            fileLink = `<a href="${window.location.origin}/uploads/${item.filePath}" target="_blank" class="doc-link">View Doc</a>`;
+                        }
+
+                        tr.innerHTML = `
+                            <td>${item.type || '--'}</td>
+                            <td style="font-weight:500;">${item.name || '--'}</td>
+                            <td>${item.date || '--'}</td>
+                            <td style="font-weight:700; color:var(--primary);">${item.points || '--'}</td>
+                            <td>${fileLink}</td>
+                            <td><span class="hash-tag" title="${item.hash}">${hashDisplay}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: #ef4444;">Error fetching records.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: #ef4444;">Connection error.</td></tr>`;
+            }
+        }
+
+        window.onload = fetchRecords;
+
+        // FORM SUBMIT
+        document.getElementById("marForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+
+            try {
+                let filePath = "";
+                const fileInput = document.getElementById("m_file");
+
+                // 1. Upload file if exists
+                if (fileInput.files.length > 0) {
+                    const formData = new FormData();
+                    formData.append("file", fileInput.files[0]);
+
+                    const uploadRes = await fetch(window.location.origin + "/api/student/upload", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (uploadRes.ok) {
+                        const uploadData = await uploadRes.json();
+                        filePath = uploadData.filepath;
+                    } else {
+                        alert("File upload failed. Saving without file.");
+                    }
+                }
+
+                // 2. Save JSON to blockchain
+                const payload = {
+                    email: email,
+                    studentName: studentName,
+                    type: document.getElementById("m_type").value,
+                    name: document.getElementById("m_name").value,
+                    date: document.getElementById("m_date").value,
+                    points: document.getElementById("m_points").value,
+                    filePath: filePath
+                };
+
+                const res = await fetch(window.location.origin + "/api/student/mar/submit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert("MAR Activity successfully secured on the blockchain.");
+                    document.getElementById("marForm").reset();
+                    fetchRecords(); // Refresh table
+                } else {
+                    alert("Failed to save record.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred during submission.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Save to Blockchain";
+            }
+        });
+
+    </script>
+</body>
+
+</html>

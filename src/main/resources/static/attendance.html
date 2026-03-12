@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dynamic Attendance Grid</title>
+  <style>
+    :root {
+      --bg: #f4f7f9;
+      --panel: #ffffff;
+      --accent: #1e293b;
+      --muted: #64748b;
+      --primary: #2563eb;
+      /* True Blue */
+      --primary-hover: #1d4ed8;
+      --secondary-bg: #eff6ff;
+      --border: #e2e8f0;
+      --ok: #10b981;
+      /* Green for present */
+      --bad: #ef4444;
+      /* Red for absent */
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--accent);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      padding-top: 70px;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: var(--panel);
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      overflow: auto;
+      border: 1px solid var(--border);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--accent);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      background: var(--primary);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn.ghost {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: var(--accent);
+      box-shadow: none;
+    }
+
+    .btn.ghost:hover {
+      background: #e2e8f0;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border);
+      padding: 12px 8px;
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    thead th {
+      background: var(--secondary-bg);
+      font-weight: 700;
+      color: var(--primary-hover);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th.sticky {
+      position: sticky;
+      left: 0;
+      background: var(--secondary-bg);
+      z-index: 3;
+    }
+
+    td.name {
+      font-weight: 600;
+      text-align: left;
+      padding-left: 12px;
+      background: #f8fafc;
+    }
+
+    .tick {
+      color: var(--ok);
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .cross {
+      color: var(--bad);
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .placeholder {
+      color: #cbd5e1;
+      font-weight: bold;
+    }
+
+    .footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .statusbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 320px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      padding: 20px;
+      padding-top: 70px;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.02);
+      z-index: 10;
+    }
+
+    .sb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .sb-list {
+      overflow: auto;
+      flex: 1;
+      padding-top: 8px;
+    }
+
+    .block-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: var(--panel);
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-left: 4px solid #cbd5e1;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s ease;
+    }
+
+    .block-item:hover {
+      background: #f8fafc;
+      border-left-color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    .block-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hash {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--secondary-bg);
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .loaded-note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--panel);
+      width: 90%;
+      max-width: 900px;
+      height: 85vh;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow: auto;
+      flex: 1;
+      font-family: monospace;
+      font-size: 13px;
+      color: #334155;
+      background: #f1f5f9;
+      margin: 0;
+    }
+
+    @media (max-width:1000px) {
+      .sidebar {
+        display: none
+      }
+
+      .container {
+        margin-right: 0
+      }
+
+      body {
+        flex-direction: column
+      }
+
+      .main {
+        height: 100vh
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <script src="filter.js"></script>
+
+  <!-- Global Navigation -->
+  <div
+    style="position: absolute; top: 0; left: 0; display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 50;">
+    <button onclick="window.history.back()"
+      style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅
+      Back</button>
+    <button onclick="window.history.forward()"
+      style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward
+      ➡</button>
+    <button onclick="window.location.reload()"
+      style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻
+      Refresh</button>
+    <button onclick="goBackToHome()"
+      style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600;">🏠
+      Homepage</button>
+  </div>
+  <script>
+    function goBackToHome() {
+      const r = localStorage.getItem('role');
+      if (r && (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')) {
+        window.location.href = 'student_dashboard.html';
+      } else {
+        window.location.href = 'teacher_list.html';
+      }
+    }
+  </script>
+
+  <div class="main">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="display:flex;flex-direction:column">
+        <h1>Attendance Sheet
+          <span id="teacherDisplay"
+            style="color: var(--primary); font-size: 14px; margin-left: 10px; font-weight: 600; background: var(--secondary-bg); padding: 4px 10px; border-radius: 20px;"></span>
+          <span id="totalStudentsCount"
+            style="font-size: 13px; color: var(--primary); font-weight: 600; margin-left: 15px;"></span>
+        </h1>
+      </div>
+      <div style="flex:1"></div>
+      <div class="statusbar" id="loadedBadgeArea"></div>
+    </div>
+
+    <div class="container" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="toolbar">
+        <button class="btn" id="addStudentBtn">+ ADD Student</button>
+        <button class="btn" id="addDateBtn">+ Add Date Column</button>
+        <button class="btn ghost" id="clearAllBtn" style="color: #ef4444; border-color: #fca5a5; background: #fef2f2;">✖
+          Clear All</button>
+        <div style="flex:1"></div>
+        <div class="small">Local Time: <span id="localTime" style="font-weight:600;"></span></div>
+      </div>
+
+      <div style="overflow:auto;max-height:56vh; border-radius: 6px; border: 1px solid var(--border);">
+        <table id="attendanceTable" aria-label="Attendance table">
+          <thead>
+            <tr id="headerRow">
+              <th>Class Roll No.</th>
+              <th class="sticky">Student</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div style="flex:1; display:flex; align-items:center;">
+          <span class="small" style="font-weight: 500;">Instruction: Click on an attendance cell to toggle between
+            Present (<span class="tick" style="font-size:14px;">✔</span>), Absent (<span class="cross"
+              style="font-size:14px;">✘</span>), and Unmarked (<span class="placeholder"
+              style="font-size:14px;">-</span>).</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-right:20px;">
+          <button class="btn ghost" id="exportPdfBtn" style="color: #475569; border-color: #cbd5e1;">Export PDF</button>
+          <button class="btn ghost" id="exportExcelBtn" style="color: #475569; border-color: #cbd5e1;">Export
+            Excel</button>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn ghost" id="undoBtn" title="Undo recent changes" disabled>Undo</button>
+          <button class="btn ghost" id="redoBtn" title="Redo recent changes" disabled>Redo</button>
+          <button class="btn" id="saveBtn">SAVE TO BLOCKCHAIN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div>
+        <div style="font-weight:800; color:var(--accent); font-size:15px;">Blockchain History</div>
+        <div class="small">Click a block to load</div>
+      </div>
+      <div class="controls">
+        <button class="btn ghost" id="refreshChainBtn" style="padding: 6px 10px; font-size: 12px;">Refresh</button>
+        <button class="btn ghost" id="openExplorerBtn" style="padding: 6px 10px; font-size: 12px;">Explorer</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin:8px 0">
+      <div style="flex:1">
+        <input id="filterInput" placeholder="Filter blocks..."
+          style="width:100%;padding:10px;border-radius:8px;background:#f8fafc;border:1px solid #cbd5e1;color:var(--accent); outline:none;">
+      </div>
+    </div>
+
+    <div class="sb-list" id="blockList" aria-live="polite"></div>
+
+    <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:10px; text-align:center;">
+      <div class="small">Total Blocks: <span id="blockCount" style="font-weight:bold; color:var(--accent);">0</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" id="explorerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Blockchain Explorer</h2>
+        <button class="btn ghost" id="closeExplorerBtn">Close Window</button>
+      </div>
+      <pre class="modal-body" id="chainArea">Loading...</pre>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const API_BASE = '';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentTeacherEmail = urlParams.get('email') || localStorage.getItem('email') || 'Unknown Teacher';
+      document.getElementById('teacherDisplay').textContent = currentTeacherEmail;
+
+      // Auto-fill from dashboard navigation parameters
+      const routeCourseId = urlParams.get('courseId');
+      const routeDept = urlParams.get('dept');
+      const routeSem = urlParams.get('sem');
+      const routeType = urlParams.get('type');
+
+      if (routeCourseId) localStorage.setItem("block_subject", routeCourseId);
+      if (routeDept) localStorage.setItem("block_dept", routeDept);
+      if (routeSem) localStorage.setItem("block_year", routeSem);
+
+      const students = [];
+      let dates = [];
+      let loadedBlock = null;
+      let blocks = [];
+
+      const tableBody = document.getElementById('tableBody');
+      const headerRow = document.getElementById('headerRow');
+      const localTimeSpan = document.getElementById('localTime');
+      const blockList = document.getElementById('blockList');
+      const blockCount = document.getElementById('blockCount');
+      const loadedBadgeArea = document.getElementById('loadedBadgeArea');
+      const revertBtn = document.getElementById('revertBtn');
+      const filterInput = document.getElementById('filterInput');
+      const explorerModal = document.getElementById('explorerModal');
+      const chainArea = document.getElementById('chainArea');
+
+      function updateLocalClock() { localTimeSpan.textContent = new Date().toLocaleString(); }
+      setInterval(updateLocalClock, 1000); updateLocalClock();
+
+      function uid() { return Math.random().toString(36).slice(2, 9); }
+      function short(str, n = 10) { if (!str) return ''; return str.length > n ? str.slice(0, n) + '…' : str; }
+      function showError(msg) { alert('Error: ' + msg); }
+      function showInfo(msg) { alert(msg); }
+
+      let undoStack = [];
+      let redoStack = [];
+
+      function captureState() {
+        undoStack.push(JSON.stringify({ students, dates }));
+        redoStack = [];
+        updateUndoRedoBtns();
+      }
+
+      function undo() {
+        if (undoStack.length === 0) return;
+        redoStack.push(JSON.stringify({ students, dates }));
+        const saved = JSON.parse(undoStack.pop());
+        students.length = 0; students.push(...saved.students);
+        dates.length = 0; dates.push(...saved.dates);
+        renderHeader(); renderBody();
+        updateUndoRedoBtns();
+      }
+
+      function redo() {
+        if (redoStack.length === 0) return;
+        undoStack.push(JSON.stringify({ students, dates }));
+        const saved = JSON.parse(redoStack.pop());
+        students.length = 0; students.push(...saved.students);
+        dates.length = 0; dates.push(...saved.dates);
+        renderHeader(); renderBody();
+        updateUndoRedoBtns();
+      }
+
+      function updateUndoRedoBtns() {
+        const u = document.getElementById('undoBtn');
+        if (u) u.disabled = undoStack.length === 0;
+        const r = document.getElementById('redoBtn');
+        if (r) r.disabled = redoStack.length === 0;
+      }
+
+      function renderHeader() {
+        while (headerRow.children.length > 2) headerRow.removeChild(headerRow.lastChild);
+        dates.forEach((d, idx) => {
+          const th = document.createElement('th');
+          th.textContent = d;
+          th.title = d;
+          const rm = document.createElement('div');
+          rm.style.fontSize = '11px'; rm.style.cursor = 'pointer'; rm.style.color = '#ef4444'; rm.textContent = 'Remove';
+          rm.onclick = (e) => { e.stopPropagation(); removeDate(idx); };
+          th.appendChild(document.createElement('br')); th.appendChild(rm);
+          headerRow.appendChild(th);
+        });
+        ['Total', 'Percentage', 'Status'].forEach(label => {
+          const th = document.createElement('th'); th.textContent = label; headerRow.appendChild(th);
+        });
+      }
+
+      function renderBody() {
+        tableBody.innerHTML = '';
+        if (document.getElementById("totalStudentsCount")) document.getElementById("totalStudentsCount").textContent = "Grid Entries: " + students.length;
+
+        students.forEach((s, si) => {
+          const tr = document.createElement('tr');
+
+          const classRollTd = document.createElement('td'); classRollTd.textContent = s.classRoll || "-"; tr.appendChild(classRollTd);
+
+          const nameTd = document.createElement('td');
+          nameTd.className = 'name';
+          nameTd.textContent = s.name || "(No Name)";
+
+          const rmBtn = document.createElement('button');
+          rmBtn.className = 'btn ghost'; rmBtn.style.marginLeft = '12px'; rmBtn.style.padding = '4px 8px'; rmBtn.style.fontSize = '11px'; rmBtn.style.color = '#ef4444';
+          rmBtn.textContent = 'Remove'; rmBtn.onclick = () => { removeStudent(si); };
+          nameTd.appendChild(rmBtn);
+          tr.appendChild(nameTd);
+
+          for (let di = 0; di < dates.length; di++) {
+            const td = document.createElement('td');
+            const val = s.attendance[di];
+            if (val === true) td.innerHTML = "<span class='tick'>✔</span>";
+            else if (val === false) td.innerHTML = "<span class='cross'>✘</span>";
+            else td.innerHTML = "<span class='placeholder'>-</span>";
+            td.style.cursor = 'pointer';
+            td.onclick = () => { toggleAttendance(si, di); };
+            tr.appendChild(td);
+          }
+
+          const total = s.attendance.filter(x => x === true).length;
+          const totalTd = document.createElement('td'); totalTd.style.fontWeight = "bold"; totalTd.textContent = total; tr.appendChild(totalTd);
+
+          const perc = dates.length === 0 ? 0 : Math.round((total / dates.length) * 1000) / 10;
+          const percTd = document.createElement('td'); percTd.style.fontWeight = "bold"; percTd.textContent = perc + '%'; tr.appendChild(percTd);
+
+          const statusTd = document.createElement('td'); statusTd.textContent = perc >= 75 ? 'OK' : 'NOT OK';
+          statusTd.style.fontWeight = "bold"; statusTd.style.color = perc >= 75 ? 'var(--ok)' : 'var(--bad)'; tr.appendChild(statusTd);
+
+          tableBody.appendChild(tr);
+        });
+      }
+
+      async function addStudent() {
+        const filters = await window.showFilterModal();
+        if (filters && filters.length > 0) {
+          captureState();
+          filters.forEach(student => {
+            const s = {
+              id: uid(),
+              name: student.name.trim(),
+              email: student.email || "",   // BUG FIX: store student email for dashboard matching
+              classRoll: student.classRoll || "",
+              univRoll: student.roll || "",
+              attendance: Array(dates.length).fill(null)
+            };
+            students.push(s);
+          });
+          renderBody();
+        } else {
+          const name = prompt('Enter student name:'); if (!name) return;
+          const emailEntry = prompt('Enter student email (optional, for dashboard link):') || '';
+          captureState();
+          const s = { id: uid(), name: name.trim(), email: emailEntry.trim(), classRoll: "", univRoll: "", attendance: Array(dates.length).fill(null) };
+          students.push(s); renderBody();
+        }
+      }
+      function removeStudent(index) { if (!confirm('Remove this student?')) return; captureState(); students.splice(index, 1); renderBody(); }
+      function addDate() { captureState(); const now = new Date(); const label = now.toLocaleDateString(); dates.push(label); students.forEach(s => s.attendance.push(null)); renderHeader(); renderBody(); }
+      function removeDate(index) { if (!confirm('Remove this date column?')) return; captureState(); dates.splice(index, 1); students.forEach(s => s.attendance.splice(index, 1)); renderHeader(); renderBody(); }
+      function toggleAttendance(si, di) { captureState(); const cur = students[si].attendance[di]; let next; if (cur === null) next = true; else if (cur === true) next = false; else next = null; students[si].attendance[di] = next; renderBody(); }
+
+      function loadBlockIntoEditor(block) {
+        if (!block || !block.data) return;
+        const data = block.data;
+        const bdates = data.meta && Array.isArray(data.meta.dates) ? data.meta.dates : (data.dates || []);
+        const bstudents = Array.isArray(data.students) ? data.students : [];
+        dates = bdates.map(d => String(d));
+        students.length = 0;
+        bstudents.forEach(s => {
+          const attendance = Array.from({ length: dates.length }, (_, i) => (s.attendance && s.attendance[i] !== undefined) ? s.attendance[i] : null);
+          // BUG FIX: preserve email field from saved block so student dashboard keeps matching correctly
+          students.push({ id: s.id || uid(), name: s.name || 'Unknown', email: s.email || "", classRoll: s.classRoll || "", univRoll: s.univRoll || "", attendance });
+        });
+        loadedBlock = { index: block.index, timestamp: block.timestamp, hash: block.hash, previousHash: block.previousHash, raw: block };
+
+        undoStack = []; redoStack = []; updateUndoRedoBtns();
+
+        renderHeader(); renderBody(); updateLoadedBadge();
+      }
+
+      function updateLoadedBadge() {
+        loadedBadgeArea.innerHTML = '';
+        if (loadedBlock) {
+          const el = document.createElement('div');
+          el.innerHTML = `<span class="badge">Viewing Block #${loadedBlock.index}</span><span class="loaded-note"> Saved: ${new Date(loadedBlock.timestamp).toLocaleString()}</span>`;
+          loadedBadgeArea.appendChild(el);
+        }
+      }
+
+      function revertToLoaded() {
+        if (!loadedBlock) return;
+        loadBlockIntoEditor(loadedBlock.raw);
+        showInfo('Reverted grid back to loaded block state.');
+      }
+
+      async function saveAll() {
+        let defaultSubject = localStorage.getItem("block_subject") || "";
+        let defaultDept = localStorage.getItem("block_dept") || "";
+        let defaultYear = localStorage.getItem("block_year") || "";
+
+        let subjectName = prompt("Enter Subject Name (e.g., Mathematics):", defaultSubject);
+        if (subjectName === null) return; // User cancelled
+
+        let departmentName = prompt("Enter Department Name (Optional, e.g., CSE):", defaultDept);
+        if (departmentName === null) departmentName = "";
+
+        let year = prompt("Enter Year (Optional, e.g., 1, 2, 3, 4):", defaultYear);
+        if (year === null) year = "";
+
+        localStorage.setItem("block_subject", subjectName.trim());
+        localStorage.setItem("block_dept", departmentName.trim());
+        localStorage.setItem("block_year", year.trim());
+
+        const btn = document.getElementById('saveBtn');
+        btn.textContent = "SAVING..."; btn.disabled = true;
+
+        const payload = {
+          email: currentTeacherEmail,
+          meta: {
+            savedAt: new Date().toISOString(),
+            dates,
+            subjectName: subjectName.trim(),
+            departmentName: departmentName.trim(),
+            year: year.trim()
+          },
+          students
+        };
+
+        try {
+          const resp = await fetch(API_BASE + '/api/attendance/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (resp.ok) {
+            await loadChain();
+          } else {
+            const text = await resp.text();
+            showError('Failed to save: ' + (resp.statusText || text));
+          }
+        } catch (err) {
+          showError('Save request error: ' + err.message);
+        } finally {
+          btn.textContent = "SAVE TO BLOCKCHAIN"; btn.disabled = false;
+        }
+      }
+
+      async function loadChain() {
+        blockList.innerHTML = '<div class="small" style="text-align:center; margin-top:20px;">Loading history...</div>';
+        try {
+          const resp = await fetch(API_BASE + '/api/attendance/chain?email=' + encodeURIComponent(currentTeacherEmail));
+          if (!resp.ok) throw new Error(resp.statusText || 'Failed to fetch chain');
+          const chain = await resp.json();
+
+          const mappedChain = (Array.isArray(chain) ? chain : []).map((b, i) => {
+            const payloadData = b.attendance || {};
+            const ts = (payloadData.meta && payloadData.meta.savedAt) ? payloadData.meta.savedAt : new Date().toISOString();
+            return {
+              index: i + 1,
+              timestamp: ts,
+              hash: b.hash,
+              previousHash: b.previousHash,
+              data: payloadData
+            };
+          });
+
+          blocks = mappedChain.slice().reverse();
+          renderBlockList();
+
+          if (blocks.length > 0 && !loadedBlock) {
+            // BUG FIX 3: if a specific courseId param was passed, auto-load the block
+            // whose subjectName matches that courseId to prevent editing the wrong subject.
+            let blockToLoad = blocks[0]; // default: most recent
+            if (routeCourseId) {
+              const matched = blocks.find(b =>
+                b.data && b.data.meta &&
+                (b.data.meta.subjectName || '').toLowerCase() === routeCourseId.toLowerCase()
+              );
+              if (matched) blockToLoad = matched;
+            }
+            loadBlockIntoEditor(blockToLoad);
+          }
+        } catch (err) {
+          blockList.innerHTML = '';
+          showError('Could not load chain: ' + err.message);
+        }
+      }
+
+      function renderBlockList() {
+        blockList.innerHTML = '';
+        const filter = (filterInput.value || '').toLowerCase().trim();
+        let count = 0;
+
+        const groups = {};
+
+        blocks.forEach(b => {
+          const idx = b.index;
+          const ts = b.timestamp;
+          const hash = b.hash || '';
+          const preview = short(hash, 12);
+          const dataSummary = (b.data && b.data.students && b.data.students.length) ? `${b.data.students.length} students` : '';
+
+          const match = !filter || String(idx).includes(filter) || hash.toLowerCase().includes(filter) || ts.toLowerCase().includes(filter) || dataSummary.toLowerCase().includes(filter);
+          if (!match) return;
+
+          let title = `Block #${idx}`;
+          if (b.data && b.data.meta && b.data.meta.subjectName) {
+            const subj = b.data.meta.subjectName;
+            const dept = b.data.meta.departmentName ? ` (${b.data.meta.departmentName})` : '';
+            const year = b.data.meta.year ? ` [Year ${b.data.meta.year}]` : '';
+            title = `${subj}${dept}${year}`;
+          }
+
+          if (!groups[title]) groups[title] = [];
+
+          const itemHTML = `
+        <div class="block-item">
+          <div class="block-meta">
+            <div style="display:flex;flex-direction:column">
+              <strong style="color:var(--primary)">Block #${idx}</strong>
+              <div class="small">${new Date(ts).toLocaleString()}</div>
+              <div class="hash" style="margin-top:4px;">${preview}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+              <div class="small" style="font-family:monospace; color:#94a3b8;">prev: ${short(b.previousHash || '', 8)}</div>
+              <div style="display:flex;gap:6px">
+                <button class="btn ghost load-btn" data-index="${idx}" style="padding:4px 8px; font-size:11px;">Load</button>
+                <button class="btn ghost inspect-btn" data-inspect="${idx}" style="padding:4px 8px; font-size:11px;">Inspect</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+          groups[title].push({ html: itemHTML, b });
+          count++;
+        });
+
+        for (const [title, groupItems] of Object.entries(groups)) {
+          const folder = document.createElement("div");
+
+          const folderHeader = document.createElement("div");
+          folderHeader.className = "folder-item";
+          // Removed the document icon
+          folderHeader.innerHTML = `<span style="color:var(--primary); font-size:14px;">${title} (${groupItems.length})</span> <span class="folder-icon">▶</span>`;
+
+          const folderContent = document.createElement("div");
+          folderContent.className = "folder-content";
+
+          groupItems.forEach(item => {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = item.html;
+            const domItem = tempDiv.firstElementChild;
+
+            domItem.querySelector('.load-btn').onclick = (e) => {
+              e.stopPropagation();
+              const i = Number(e.currentTarget.getAttribute('data-index'));
+              const block = blocks.find(x => x.index === i);
+              if (block) loadBlockIntoEditor(block);
+            };
+            domItem.querySelector('.inspect-btn').onclick = (e) => {
+              e.stopPropagation();
+              const i = Number(e.currentTarget.getAttribute('data-inspect'));
+              const block = blocks.find(x => x.index === i);
+              if (block) {
+                explorerModal.style.display = 'flex';
+                chainArea.style.color = '#334155';
+                chainArea.textContent = JSON.stringify(block, null, 2);
+              }
+            };
+            folderContent.appendChild(domItem);
+          });
+
+          folderHeader.onclick = () => {
+            folderContent.classList.toggle("expanded");
+            folderHeader.querySelector(".folder-icon").classList.toggle("open");
+          };
+
+          folder.appendChild(folderHeader);
+          folder.appendChild(folderContent);
+          blockList.appendChild(folder);
+        }
+
+        blockCount.textContent = count;
+        if (count === 0) blockList.innerHTML = '<div class="small" style="text-align:center; margin-top:20px;">No attendance history found.</div>';
+      }
+
+      function openExplorer() {
+        explorerModal.style.display = 'flex';
+        chainArea.textContent = 'Fetching raw blockchain data...';
+        chainArea.style.color = '#334155';
+
+        fetch(API_BASE + '/api/attendance/chain?email=' + encodeURIComponent(currentTeacherEmail))
+          .then(r => {
+            if (!r.ok) throw new Error("HTTP error " + r.status);
+            return r.json();
+          })
+          .then(chain => {
+            chainArea.textContent = JSON.stringify(chain, null, 2);
+          })
+          .catch(err => {
+            chainArea.style.color = '#ef4444';
+            chainArea.textContent = 'Error connecting to backend.\n' + err.message;
+          });
+      }
+
+      document.getElementById('addStudentBtn').onclick = addStudent;
+      document.getElementById('addDateBtn').onclick = addDate;
+      document.getElementById('saveBtn').onclick = saveAll;
+      document.getElementById('undoBtn').onclick = undo;
+      document.getElementById('redoBtn').onclick = redo;
+      document.getElementById('clearAllBtn').onclick = () => {
+        if (!confirm("Are you sure you want to clear all attendance data? This will empty the grid.")) return;
+        captureState();
+        students.length = 0;
+        dates.length = 0;
+        renderHeader();
+        renderBody();
+      };
+      document.getElementById('refreshChainBtn').onclick = loadChain;
+      document.getElementById('openExplorerBtn').onclick = openExplorer;
+
+      document.getElementById('closeExplorerBtn').onclick = () => {
+        explorerModal.style.display = 'none';
+      };
+
+      explorerModal.onclick = (e) => {
+        if (e.target === explorerModal) {
+          explorerModal.style.display = 'none';
+        }
+      };
+
+      // --- Export Functionality ---
+      function getCleanTable(selector) {
+        const table = document.querySelector(selector);
+        if (!table) return null;
+        const clone = table.cloneNode(true);
+
+        const origInputs = table.querySelectorAll('input');
+        const cloneInputs = clone.querySelectorAll('input');
+        origInputs.forEach((inp, i) => {
+          if (cloneInputs[i]) {
+            cloneInputs[i].parentNode.replaceChild(document.createTextNode(inp.value), cloneInputs[i]);
+          }
+        });
+
+        clone.querySelectorAll('button').forEach(btn => btn.remove());
+        clone.querySelectorAll('.remove-btn').forEach(btn => btn.remove());
+        clone.querySelectorAll('th div').forEach(el => {
+          if (el.textContent.trim() === 'Remove') el.remove();
+        });
+
+        clone.querySelectorAll('.tick').forEach(el => el.textContent = 'P');
+        clone.querySelectorAll('.cross').forEach(el => el.textContent = 'A');
+
+        return clone;
+      }
+
+      function getExportFilename(baseName) {
+        let subject = localStorage.getItem("block_subject") || "Unknown_Subject";
+        let dept = localStorage.getItem("block_dept") || "";
+        let year = localStorage.getItem("block_year") || "";
+
+        let parts = [subject];
+        if (dept) parts.push(dept);
+        if (year) parts.push(`Year${year}`);
+
+        return `${baseName}_${parts.join("_").replace(/[^a-z0-9_]/gi, '')}`;
+      }
+
+      document.getElementById("exportPdfBtn").onclick = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        const filename = getExportFilename("Attendance") + ".pdf";
+
+        doc.text(filename.replace(".pdf", ""), 14, 15);
+
+        doc.autoTable({
+          html: getCleanTable('#attendanceTable'),
+          startY: 20,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [37, 99, 235] }
+        });
+
+        doc.save(filename);
+      };
+
+      document.getElementById("exportExcelBtn").onclick = () => {
+        const tableClone = getCleanTable("#attendanceTable");
+        if (!tableClone) return alert("Nothing to export!");
+        const wb = XLSX.utils.table_to_book(tableClone, { sheet: "Attendance" });
+        const filename = getExportFilename("Attendance") + ".xlsx";
+        XLSX.writeFile(wb, filename);
+      };
+
+      filterInput.oninput = renderBlockList;
+
+      renderHeader(); renderBody(); loadChain();
+
+    })();
+  </script>
+</body>
+
+</html>

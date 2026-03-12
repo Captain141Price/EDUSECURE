@@ -1,0 +1,804 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Blockchain PDF MOOCs Grid</title>
+
+<style>
+:root { 
+  --bg: #f4f7f9; 
+  --panel: #ffffff; 
+  --accent: #1e293b; 
+  --muted: #64748b; 
+  --primary: #2563eb; /* True Blue */
+  --primary-hover: #1d4ed8; 
+  --secondary-bg: #eff6ff; 
+  --border: #e2e8f0;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.container { display: flex; height: 100vh; }
+
+.sidebar {
+  width: 320px;
+  background: var(--panel);
+  padding: 20px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+  z-index: 10;
+}
+
+.content { flex: 1; padding: 28px; box-sizing: border-box; }
+
+.header { font-size: 18px; margin-bottom: 16px; font-weight: 800; color: var(--accent); }
+
+.table-wrap {
+  background: var(--panel);
+  padding: 12px;
+  border: 1px solid var(--border);
+  overflow: auto;
+  max-height: 70vh;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+
+table { border-collapse: collapse; width: 100%; }
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: center;
+  color: var(--accent);
+}
+
+thead th { 
+  background: var(--secondary-bg); 
+  color: var(--primary-hover);
+  font-weight: 700;
+}
+
+input {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: none;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--primary);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+  margin-left: 6px;
+}
+
+.button:hover { 
+  background: var(--primary-hover); 
+  transform: translateY(-1px);
+}
+
+.button.ghost {
+  background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--accent); box-shadow: none;
+}
+
+.button.ghost:hover { background: #e2e8f0; }
+
+.add-btn {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 2px dashed #93c5fd;
+  cursor: pointer;
+  background: #eff6ff;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.add-btn:hover { 
+  background: #dbeafe; 
+  border-color: var(--primary);
+}
+
+.folder-item {
+  padding: 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.folder-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+.folder-content { display: none; padding-left: 10px; border-left: 2px solid #e2e8f0; margin-left: 10px; margin-bottom: 10px; }
+.folder-content.expanded { display: block; }
+.folder-icon { font-size: 12px; transition: transform 0.2s; }
+.folder-icon.open { transform: rotate(90deg); }
+
+.block-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  margin-top: 5px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #cbd5e1;
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.2s ease;
+}
+
+.block-item:hover { 
+  background: #f8fafc; 
+  border-left-color: var(--primary);
+  transform: translateX(2px);
+}
+
+.block-selected {
+  background: var(--secondary-bg) !important;
+  border-left-color: var(--primary) !important;
+  border-color: #93c5fd;
+}
+
+.pdf-btn {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  font-size: 12px;
+  margin: 2px;
+  display: inline-block;
+}
+
+.pdf-btn:hover { color: var(--primary-hover); }
+
+.remove-btn {
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 4px;
+  font-weight: bold;
+}
+
+.remove-btn:hover { color: #b91c1c; }
+
+.status { font-size: 13px; color: var(--muted); margin-left: 8px; font-weight: 600; }
+
+.total-cell { font-weight: bold; color: var(--primary-hover); }
+
+.small { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+
+<body>
+<script src="filter.js"></script>
+
+<!-- Global Navigation -->
+<div style="display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50;">
+  <button onclick="window.history.back()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅ Back</button>
+  <button onclick="window.history.forward()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward ➡</button>
+  <button onclick="window.location.reload()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻ Refresh</button>
+  <button onclick="goBackToHome()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600;">🏠 Homepage</button>
+</div>
+<script>
+  function goBackToHome() {
+      const r = localStorage.getItem('role');
+      if (r && (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')) {
+          window.location.href = 'student_dashboard.html';
+      } else {
+          window.location.href = 'teacher_list.html';
+      }
+  }
+</script>
+
+<div class="container">
+
+<div class="sidebar">
+  <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>Blockchain History</span>
+    <button class="button ghost" style="padding: 6px 10px; font-size: 12px;" onclick="loadBlocks()">Refresh</button>
+  </div>
+  <div id="blockList" style="margin-top: 10px;"></div>
+</div>
+
+<div class="content">
+
+  <h2>
+    PDF-Based MOOCs Grid
+    <span style="color: var(--primary); font-size: 16px; margin-left: 10px; font-weight: 600; background: var(--secondary-bg); padding: 4px 10px; border-radius: 20px;" id="teacherDisplay"></span>
+    <span id="totalStudentsCount" style="font-size: 14px; margin-left: 15px; color: var(--muted); font-weight: 600;"></span>
+    
+    <span style="float:right">
+      <button class="button ghost" onclick="newGrid()">New Grid</button>
+      <button class="button ghost" id="undoBtn" onclick="undo()" disabled>Undo</button>
+      <button class="button ghost" id="redoBtn" onclick="redo()" disabled>Redo</button>
+      <button class="button" onclick="saveState()">SAVE MOOCS</button>
+      <span id="saveStatus" class="status"></span>
+    </span>
+  </h2>
+
+  <div class="table-wrap" id="gridWrap"></div>
+
+  <div style="margin-top:20px; display:flex; gap:10px;">
+    <span class="add-btn" onclick="addStudent()">+ ADD STUDENT</span>
+    <span class="add-btn" onclick="addSubject()">+ ADD PDF COLUMN</span>
+    <span class="add-btn" onclick="addMarksColumn()">+ ADD POINTS COLUMN</span>
+    <span class="add-btn" onclick="clearAll()" style="color: #ef4444; border-color: #fca5a5; background: #fef2f2;">✖ CLEAR ALL</span>
+  </div>
+
+</div>
+</div>
+
+<script>
+// --- Extract Teacher Email from URL ---
+const urlParams = new URLSearchParams(window.location.search);
+const currentTeacherEmail = urlParams.get('email') || 'Unknown Teacher';
+document.getElementById('teacherDisplay').textContent = currentTeacherEmail;
+
+// --- Updated API Routes to match MoocsController ---
+const API_LATEST = window.location.origin + "/api/moocs/latest?email=" + encodeURIComponent(currentTeacherEmail);
+const API_SAVE = window.location.origin + "/api/moocs/save";
+const API_BLOCKS = window.location.origin + "/api/moocs/chain?email=" + encodeURIComponent(currentTeacherEmail);
+
+let state = {
+  subjects: [],
+  students: [],
+  cells: [],
+  marksColumns: [],
+  marks: []
+};
+
+let blocksCache = [];
+let selectedBlock = null;
+
+let undoStack = [];
+let redoStack = [];
+
+function captureState() {
+  undoStack.push(JSON.stringify(state));
+  redoStack = [];
+  updateUndoRedoBtns();
+}
+
+function undo() {
+  if(undoStack.length === 0) return;
+  redoStack.push(JSON.stringify(state));
+  state = JSON.parse(undoStack.pop());
+  renderTable(); updateUndoRedoBtns();
+}
+
+function redo() {
+  if(redoStack.length === 0) return;
+  undoStack.push(JSON.stringify(state));
+  state = JSON.parse(redoStack.pop());
+  renderTable(); updateUndoRedoBtns();
+}
+
+function updateUndoRedoBtns() {
+  const u = el('undoBtn'); if(u) u.disabled = undoStack.length === 0;
+  const r = el('redoBtn'); if(r) r.disabled = redoStack.length === 0;
+}
+
+let focusStateStr = null;
+document.addEventListener("focusin", (e) => {
+  if(e.target.tagName === 'INPUT') {
+    focusStateStr = JSON.stringify(state);
+  }
+});
+document.addEventListener("focusout", (e) => {
+  if(e.target.tagName === 'INPUT') {
+    if(focusStateStr && focusStateStr !== JSON.stringify(state)) {
+      undoStack.push(focusStateStr);
+      redoStack = [];
+      updateUndoRedoBtns();
+    }
+  }
+});
+
+function el(id){ return document.getElementById(id); }
+
+function createDefaultGrid() {
+  state = {
+    subjects: ["Course 1", "Course 2"],
+    students: [{name: "Student 1"}, {name: "Student 2"}],
+    cells: [[null, null], [null, null]],
+    marksColumns: ["Points for Course 1"],
+    marks: [[""], [""]]
+  };
+}
+
+function calculateTotal(rowIndex) {
+  let total = 0;
+  if(state.marks[rowIndex]){
+    state.marks[rowIndex].forEach(v => {
+      let num = parseFloat(v);
+      if(!isNaN(num)) total += num;
+    });
+  }
+  return total;
+}
+
+function updateTotal(rowIndex) {
+  const totalCell = document.getElementById("total-" + rowIndex);
+  if(totalCell){
+    totalCell.textContent = calculateTotal(rowIndex);
+  }
+}
+
+function renderTable() {
+  const wrap = el("gridWrap");
+  wrap.innerHTML = "";
+  if(el("totalStudentsCount")) el("totalStudentsCount").textContent = "Grid Entries: " + state.students.length;
+
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const tr = document.createElement("tr");
+
+  tr.appendChild(th("CLASS ROLL"));
+  tr.appendChild(th("STUDENT"));
+
+  state.subjects.forEach((s, i) => {
+    const thx = document.createElement("th");
+    const inp = document.createElement("input");
+    inp.value = s;
+    inp.style.fontWeight = "bold";
+    inp.style.color = "var(--primary-hover)";
+    inp.oninput = e => state.subjects[i] = e.target.value;
+
+    const remove = document.createElement("span");
+    remove.className = "remove-btn";
+    remove.textContent = "✖";
+    remove.title = "Remove PDF Column";
+    remove.onclick = () => removeSubject(i);
+
+    thx.appendChild(inp);
+    thx.appendChild(remove);
+    tr.appendChild(thx);
+  });
+
+  state.marksColumns.forEach((m, i) => {
+    const thx = document.createElement("th");
+    const inp = document.createElement("input");
+    inp.value = m;
+    inp.style.fontWeight = "bold";
+    inp.style.color = "var(--primary-hover)";
+    inp.oninput = e => state.marksColumns[i] = e.target.value;
+
+    const remove = document.createElement("span");
+    remove.className = "remove-btn";
+    remove.textContent = "✖";
+    remove.title = "Remove Points Column";
+    remove.onclick = () => removeMarksColumn(i);
+
+    thx.appendChild(inp);
+    thx.appendChild(remove);
+    tr.appendChild(thx);
+  });
+
+  tr.appendChild(th("TOTAL POINTS"));
+  thead.appendChild(tr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+
+  state.students.forEach((st, ri) => {
+
+    if(!state.cells[ri]) state.cells[ri] = Array(state.subjects.length).fill(null);
+    if(!state.marks[ri]) state.marks[ri] = Array(state.marksColumns.length).fill("");
+
+    const row = document.createElement("tr");
+
+    row.appendChild(tdInput(st.classRoll || "", v => st.classRoll = v));
+
+    const nameCell = tdInput(st.name, v => st.name = v);
+    nameCell.style.textAlign = "left";
+    nameCell.style.paddingLeft = "16px";
+    nameCell.style.fontWeight = "600";
+    nameCell.style.background = "#f8fafc";
+    
+    const remove = document.createElement("span");
+    remove.className = "remove-btn";
+    remove.textContent = " ✖";
+    remove.title = "Remove Student";
+    remove.onclick = () => removeStudent(ri);
+    nameCell.appendChild(remove);
+    row.appendChild(nameCell);
+
+    state.subjects.forEach((_, ci) => {
+      const td = document.createElement("td");
+
+      if(state.cells[ri][ci]) {
+        const view = document.createElement("span");
+        view.className = "pdf-btn";
+        view.textContent = "View PDF";
+        view.onclick = () => openPDF(state.cells[ri][ci]);
+
+        const del = document.createElement("span");
+        del.className = "remove-btn";
+        del.textContent = "Clear";
+        del.onclick = () => {
+          state.cells[ri][ci] = null;
+          renderTable();
+        };
+
+        td.appendChild(view);
+        td.appendChild(document.createElement("br"));
+        td.appendChild(del);
+      } else {
+        const up = document.createElement("span");
+        up.className = "pdf-btn";
+        up.textContent = "Upload PDF";
+        up.onclick = () => uploadPDF(ri, ci);
+        td.appendChild(up);
+      }
+
+      row.appendChild(td);
+    });
+
+    state.marksColumns.forEach((_, ci) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = state.marks[ri][ci] || "";
+
+      input.oninput = e => {
+        state.marks[ri][ci] = e.target.value;
+        updateTotal(ri); 
+      };
+
+      td.appendChild(input);
+      row.appendChild(td);
+    });
+
+    const totalTd = document.createElement("td");
+    totalTd.className = "total-cell";
+    totalTd.id = "total-" + ri;
+    totalTd.textContent = calculateTotal(ri);
+    row.appendChild(totalTd);
+
+    tbody.appendChild(row);
+  });
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+function th(t){
+  const x = document.createElement("th");
+  x.textContent = t;
+  return x;
+}
+
+function tdInput(val, cb){
+  const td = document.createElement("td");
+  const i = document.createElement("input");
+  i.value = val;
+  i.oninput = e => cb(e.target.value);
+  td.appendChild(i);
+  return td;
+}
+
+async function addStudent(){
+  const filters = await window.showFilterModal();
+  
+  if (filters && filters.length > 0) {
+      captureState();
+      filters.forEach(student => {
+          state.students.push({name: student.name, classRoll: student.classRoll || "", univRoll: student.roll || ""});
+          state.cells.push(Array(state.subjects.length).fill(null));
+          state.marks.push(Array(state.marksColumns.length).fill(""));
+      });
+  } else {
+      const name = prompt("Student name:");
+      if(!name) return;
+      captureState();
+      state.students.push({name, classRoll: "", univRoll: ""});
+      state.cells.push(Array(state.subjects.length).fill(null));
+      state.marks.push(Array(state.marksColumns.length).fill(""));
+  }
+  
+  renderTable();
+}
+
+function removeStudent(index){
+  if(!confirm("Remove this student?")) return;
+  captureState();
+  state.students.splice(index, 1);
+  state.cells.splice(index, 1);
+  state.marks.splice(index, 1);
+  renderTable();
+}
+
+function addSubject(){
+  const name = prompt("PDF Column name:");
+  if(!name) return;
+  captureState();
+  state.subjects.push(name);
+  state.cells.forEach(r => r.push(null));
+  renderTable();
+}
+
+function removeSubject(index){
+  if(!confirm("Remove this PDF column?")) return;
+  captureState();
+  state.subjects.splice(index, 1);
+  state.cells.forEach(r => r.splice(index, 1));
+  renderTable();
+}
+
+function addMarksColumn(){
+  const name = prompt("Points column name:");
+  if(!name) return;
+  captureState();
+  state.marksColumns.push(name);
+  state.marks.forEach(r => r.push(""));
+  renderTable();
+}
+
+function removeMarksColumn(index){
+  if(!confirm("Remove this Points column?")) return;
+  captureState();
+  state.marksColumns.splice(index, 1);
+  state.marks.forEach(r => r.splice(index, 1));
+  renderTable();
+}
+
+function clearAll(){
+  if(!confirm("Are you sure you want to clear all data? This will empty the grid.")) return;
+  captureState();
+  state.subjects = [];
+  state.students = [];
+  state.cells = [];
+  state.marksColumns = [];
+  state.marks = [];
+  selectedBlock = null;
+  renderTable();
+}
+
+function newGrid(){
+  if(confirm("Create new empty grid? Unsaved changes will be lost.")){
+    captureState();
+    createDefaultGrid();
+    selectedBlock = null;
+    renderTable();
+  }
+}
+
+function uploadPDF(r, c){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/pdf";
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if(!file) return;
+    captureState();
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.cells[r][c] = {
+        name: file.name,
+        type: file.type,
+        data: reader.result
+      };
+      renderTable();
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function openPDF(pdf){
+  const w = window.open();
+  w.document.write(`<iframe src="${pdf.data}" width="100%" height="100%" style="border:none;"></iframe>`);
+}
+
+async function loadState(){
+  try{
+    const r = await fetch(API_LATEST);
+    const d = await r.json();
+    if(!d || !d.subjects || d.subjects.length === 0){
+      createDefaultGrid();
+    } else {
+      state = d;
+      if(!state.marksColumns) state.marksColumns = [];
+      if(!state.marks) state.marks = [];
+    }
+    selectedBlock = null;
+  }catch{
+    createDefaultGrid();
+  }
+  renderTable();
+  loadBlocks();
+}
+
+async function saveState(){
+  el("saveStatus").textContent = "Saving to blockchain...";
+  el("saveStatus").style.color = "var(--muted)";
+  
+  let defaultSubject = localStorage.getItem("block_subject") || "";
+  let defaultDept = localStorage.getItem("block_dept") || "";
+  let defaultYear = localStorage.getItem("block_year") || "";
+
+  let subjectName = prompt("Enter Subject Name (e.g., Mathematics):", defaultSubject);
+  if (subjectName === null) return; // User cancelled
+  
+  let departmentName = prompt("Enter Department Name (Optional, e.g., CSE):", defaultDept);
+  if (departmentName === null) departmentName = "";
+  
+  let year = prompt("Enter Year (Optional, e.g., 1, 2, 3, 4):", defaultYear);
+  if (year === null) year = "";
+  
+  localStorage.setItem("block_subject", subjectName.trim());
+  localStorage.setItem("block_dept", departmentName.trim());
+  localStorage.setItem("block_year", year.trim());
+
+  el("saveStatus").textContent="Saving block...";
+  state.email = currentTeacherEmail;
+  state.savedAt = new Date().toISOString();
+  state.meta = { 
+    subjectName: subjectName.trim(), 
+    departmentName: departmentName.trim(),
+    year: year.trim()
+  };
+
+  try{
+    const res = await fetch(API_SAVE, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(state)
+    });
+    if(!res.ok) throw new Error("Failed");
+    
+    el("saveStatus").textContent = "Successfully Saved!";
+    el("saveStatus").style.color = "#10b981"; // green
+    loadBlocks();
+  }catch{
+    el("saveStatus").textContent = "Error saving";
+    el("saveStatus").style.color = "#ef4444"; // red
+  }
+  setTimeout(() => { el("saveStatus").textContent = ""; el("saveStatus").style.color = "var(--muted)"; }, 3000);
+}
+
+function getBlockTitle(b) {
+  let title = `Block #${b.index}`;
+  if(b.data && b.data.meta && b.data.meta.subjectName) {
+      const subj = b.data.meta.subjectName;
+      const dept = b.data.meta.departmentName ? ` (${b.data.meta.departmentName})` : '';
+      const year = b.data.meta.year ? ` [Year ${b.data.meta.year}]` : '';
+      title = `${subj}${dept}${year}`;
+  }
+  return title;
+}
+
+function makeBlockElement(b){
+  const div = document.createElement("div");
+  div.className = "block-item";
+  div.id = "block-" + b.index;
+  const ts = (b.timestamp ? new Date(b.timestamp).toLocaleString() : "Recent");
+  const hash = b.hash ? b.hash.slice(0,12) + "..." : "N/A";
+  
+  const title = getBlockTitle(b);
+
+  div.innerHTML = `<b style="color:var(--primary)">Block #${b.index}</b><br><small style="color:var(--accent)">${ts}</small><br><small>Hash: <span style="font-family:monospace">${hash}</span></small>`;
+  div.onclick = () => loadBlock(b.index);
+  return div;
+}
+
+async function loadBlocks(){
+  const box = el("blockList");
+  box.innerHTML = '<div class="small" style="text-align:center;margin-top:20px;">Loading history...</div>';
+  try{
+    const r = await fetch(API_BLOCKS);
+    const rawBlocks = await r.json();
+    
+    // Map backend format to internal format
+    blocksCache = (Array.isArray(rawBlocks) ? rawBlocks : []).map((b, i) => ({
+      index: i + 1,
+      timestamp: b.data?.savedAt ? new Date(b.data.savedAt).getTime() : new Date().getTime(),
+      hash: b.hash,
+      data: b.data
+    }));
+
+    blocksCache.sort((a,b) => (b.index||0) - (a.index||0)); // newest first
+
+    box.innerHTML = "";
+    if(blocksCache.length === 0){
+      box.innerHTML = '<div class="small" style="text-align:center;margin-top:20px;">No history found.</div>';
+      return;
+    }
+
+    // Group blocks by calculated title
+    const groups = {};
+    blocksCache.forEach(b => {
+      const title = getBlockTitle(b);
+      if(!groups[title]) groups[title] = [];
+      groups[title].push(b);
+    });
+
+    // Render folders
+    for (const [title, groupBlocks] of Object.entries(groups)) {
+      const folder = document.createElement("div");
+      
+      const folderHeader = document.createElement("div");
+      folderHeader.className = "folder-item";
+      // Removed the document icon
+      folderHeader.innerHTML = `<span style="color:var(--primary); font-size:14px;">${title} (${groupBlocks.length})</span> <span class="folder-icon">▶</span>`;
+      
+      const folderContent = document.createElement("div");
+      folderContent.className = "folder-content";
+
+      groupBlocks.forEach(b => folderContent.appendChild(makeBlockElement(b)));
+
+      folderHeader.onclick = () => {
+        folderContent.classList.toggle("expanded");
+        folderHeader.querySelector(".folder-icon").classList.toggle("open");
+      };
+
+      folder.appendChild(folderHeader);
+      folder.appendChild(folderContent);
+      box.appendChild(folder);
+    }
+
+    highlight();
+  }catch{
+    box.innerHTML = '<div class="small" style="color:#ef4444;text-align:center;margin-top:20px;">Error loading blocks.</div>';
+  }
+}
+
+function loadBlock(index){
+  const block = blocksCache.find(b => b.index === index);
+  if(block && block.data){
+    state = block.data;
+    if(!state.marksColumns) state.marksColumns = [];
+    if(!state.marks) state.marks = [];
+    selectedBlock = index;
+    undoStack = []; redoStack = []; updateUndoRedoBtns();
+    renderTable();
+    highlight();
+  } else {
+    alert("Cannot load block");
+  }
+}
+
+function highlight(){
+  document.querySelectorAll(".block-item").forEach(x => x.classList.remove("block-selected"));
+  const a = document.getElementById("block-" + selectedBlock);
+  if(a) a.classList.add("block-selected");
+}
+
+// Initial load
+loadState();
+
+</script>
+</body>
+</html>

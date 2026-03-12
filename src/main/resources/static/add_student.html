@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+
+    <style>
+        /* ======== General Page Styling ======== */
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+
+            background: url('https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSGoeVgyGSL6dxoGuNFkkVAHoL9e5d5v3e2ZDzpRFzQV55qrmLf') no-repeat center center fixed;
+            background-size: cover;
+
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+
+            /* IMPORTANT */
+            align-items: flex-start;
+            overflow-y: auto;
+            padding: 40px 0;
+            color: #fff;
+        }
+
+        /* ======== Container ======== */
+        .container {
+            width: 95%;
+            max-width: 500px;
+            background: rgba(40, 40, 40, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 15px;
+            padding: 35px 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ======== Title ======== */
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        /* ======== Input Fields ======== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #222;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: #666;
+        }
+
+        .form-group input:focus {
+            box-shadow: 0 0 8px #ffcc00;
+            background: #fff;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #222;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-group select:focus {
+            box-shadow: 0 0 8px #ffcc00;
+            background: #fff;
+        }
+
+        .password-group {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+        }
+
+        /* ======== Button ======== */
+        .save-btn {
+            background: #ff6600;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .save-btn:hover {
+            background: #ff8533;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Global Navigation -->
+    <div
+        style="position: absolute; top: 0; left: 0; display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 50;">
+        <button onclick="window.history.back()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅
+            Back</button>
+        <button onclick="window.history.forward()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward
+            ➡</button>
+        <button onclick="window.location.reload()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻
+            Refresh</button>
+        <button onclick="goBackToHome()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600; margin-left: 10px;">🏠
+            Homepage</button>
+    </div>
+    <script>
+        function goBackToHome() {
+            const r = localStorage.getItem('role');
+            if (r && (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')) {
+                window.location.href = 'student_dashboard.html';
+            } else {
+                window.location.href = 'teacher_list.html';
+            }
+        }
+    </script>
+    <div class="container" style="margin-top: 50px;">
+        <h1>Add Student</h1>
+
+        <!-- Class Roll (new mandatory field) -->
+        <div class="form-group">
+            <input type="number" id="classRoll" placeholder="Class Roll (numeric)" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="name" placeholder="Name" required>
+        </div>
+
+        <div class="form-group">
+            <select id="department" required>
+                <option value="">Select Department</option>
+                <option value="CSE1">CSE1</option>
+                <option value="CSE2">CSE2</option>
+                <option value="CSE3">CSE3</option>
+                <option value="AIML">AIML</option>
+                <option value="IT">IT</option>
+                <option value="ECE">ECE</option>
+                <option value="EE">EE</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select id="passingyear" required>
+                <option value="">Select Passing Year</option>
+                <script>
+                    for (let y = 2020; y <= 2040; y++) {
+                        document.write(`<option value="${y}">${y}</option>`);
+                    }
+                </script>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select id="sem" required>
+                <option value="">Select Semester</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input type="email" id="email" placeholder="Email" required>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="uniroll" placeholder="University Roll">
+        </div>
+
+        <!-- hidden — default password; not shown to admin -->
+        <div class="form-group password-group" style="display: none;">
+            <input type="password" id="password" placeholder="Password" value="stcet@123">
+        </div>
+
+        <button class="save-btn" onclick="saveProfile()">Save Profile</button>
+    </div>
+
+    <script>
+        async function saveProfile() {
+            const classRollRaw = document.getElementById("classRoll").value.trim();
+            const name         = document.getElementById("name").value.trim();
+            const email        = document.getElementById("email").value.trim();
+            const department   = document.getElementById("department").value.trim();
+            const semester     = document.getElementById("sem").value.trim();
+            const passingYear  = document.getElementById("passingyear").value.trim();
+            const roll         = document.getElementById("uniroll").value.trim();
+            const password     = document.getElementById("password").value.trim();
+
+            // Frontend validation
+            if (!classRollRaw) { alert("Class Roll is required"); return; }
+            if (!/^\d+$/.test(classRollRaw)) { alert("Class Roll must be a number"); return; }
+            if (!name)       { alert("Name is required"); return; }
+            if (!email)      { alert("Email is required"); return; }
+            if (!department) { alert("Please select a Department"); return; }
+            if (!semester)   { alert("Please select a Semester"); return; }
+            if (!passingYear){ alert("Please select a Passing Year"); return; }
+
+            const data = {
+                classRoll:   classRollRaw,
+                name,
+                email,
+                password,
+                roll,
+                semester,
+                passingYear,
+                department
+            };
+
+            try {
+                // Check Excel duplicate
+                const excelCheck = await fetch(`/student/by-email?email=${encodeURIComponent(email)}`);
+                if (excelCheck.status === 200) {
+                    alert("Student with this email already exists!");
+                    return;
+                }
+
+                // Check blockchain duplicate
+                const blockchainCheck = await fetch(window.location.origin + "/auth/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, password, role: "student" })
+                });
+                if (blockchainCheck.status === 409) {
+                    alert("Student with this email already exists!");
+                    return;
+                }
+
+                // Save student
+                const saveRes = await fetch(window.location.origin + "/student/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await saveRes.json();
+                alert(result.message);
+
+                if (saveRes.ok) {
+                    document.querySelectorAll("input").forEach(i => i.value = "");
+                    document.getElementById("department").value = "";
+                    document.getElementById("sem").value = "";
+                    document.getElementById("passingyear").value = "";
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Error while saving student profile");
+            }
+        }
+    </script>
+</body>
+
+</html>

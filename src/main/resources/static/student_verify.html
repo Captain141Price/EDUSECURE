@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Record Verification - Blockchain ERP</title>
+    <style>
+        :root {
+            --bg: #f4f7f9;
+            --panel: #ffffff;
+            --accent: #1e293b;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-bg: #eff6ff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--accent);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 24px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--secondary-bg);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .logout-btn {
+            margin: 20px;
+            padding: 10px;
+            background: #ef4444;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 15px 30px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* VERIFICATION STATUS CARD */
+        .status-card {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: white;
+        }
+
+        .status-icon.valid {
+            background: var(--success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .status-icon.invalid {
+            background: var(--danger);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .status-icon.loading {
+            background: var(--muted);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        .status-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .status-msg {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* TABLE */
+        .table-container {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .chain-badge {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            border: 1px solid #cbd5e1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-family: monospace;
+            /* Monospace for hashes */
+        }
+
+        th {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .hash-str {
+            word-break: break-all;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .type-badge {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--secondary-bg);
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Student Portal</h2>
+            <div style="font-size: 12px; opacity: 0.8;">Blockchain Secured</div>
+        </div>
+        <div class="sidebar-nav">
+            <a class="nav-item" href="student_dashboard.html">Dashboard Home</a>
+            <a class="nav-item" href="student_marks.html">View Marks</a>
+            <a class="nav-item" href="student_attendance.html">View Attendance</a>
+            <a class="nav-item" href="student_mar.html">MAR Activities</a>
+            <a class="nav-item" href="student_moocs.html">MOOCs Courses</a>
+            <a class="nav-item active" href="student_verify.html">Record Verification</a>
+        </div>
+        <div class="logout-btn" onclick="logout()">Log Out</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="topbar">
+            <h2>Identity & Integrity</h2>
+            <div style="font-size: 13px; color: var(--muted); font-weight: 500;">
+                <span id="welcomeName" style="color: var(--accent); font-weight: 700;">Student</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+
+            <!-- STATUS CARD -->
+            <div class="status-card">
+                <div class="status-icon loading" id="statusIcon">
+                    <!-- Icon SVG -->
+                    <svg id="iconSvg" width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="status-title" id="statusTitle">Verifying Global Chain...</div>
+                <div class="status-msg" id="statusMsg">Please wait while we compute cryptographic hashes across all
+                    blockchain networks to verify data integrity.</div>
+            </div>
+
+            <!-- PERSONAL LEDGER -->
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="table-title">Your Cryptographic Ledger</div>
+                    <div class="chain-badge">Local Node: Connected</div>
+                </div>
+                <table id="verifyTable">
+                    <thead>
+                        <tr>
+                            <th width="15%">Record Type</th>
+                            <th width="20%">Timestamp / Info</th>
+                            <th width="32%">Previous Block Hash</th>
+                            <th width="33%">Current Block Hash</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifyBody">
+                        <tr>
+                            <td colspan="4"
+                                style="text-align:center; padding: 40px; font-family: 'Segoe UI', Arial, sans-serif; color: var(--muted);">
+                                Scanning ledger...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const role = localStorage.getItem("role");
+        const email = localStorage.getItem("email");
+        const studentName = localStorage.getItem("username");
+
+        if (!role || role.toLowerCase() !== "student") {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("welcomeName").textContent = studentName || "Student";
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        window.onload = async () => {
+            const tbody = document.getElementById("verifyBody");
+
+            try {
+                const res = await fetch(window.location.origin + `/api/student/verify?email=${encodeURIComponent(email)}`);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // UPDATE STATUS UI
+                    const stIcon = document.getElementById("statusIcon");
+                    const stTitle = document.getElementById("statusTitle");
+                    const stMsg = document.getElementById("statusMsg");
+                    const iconSvg = document.getElementById("iconSvg");
+
+                    stIcon.classList.remove("loading");
+
+                    if (data.valid) {
+                        stIcon.classList.add("valid");
+                        iconSvg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>`;
+                        stTitle.textContent = "Blockchain is Valid & Secure";
+                        stTitle.style.color = "var(--success)";
+                        stMsg.textContent = "The cryptographic integrity of all university records has been mathematically verified. Your academic data has not been tampered with.";
+                    } else {
+                        stIcon.classList.add("invalid");
+                        iconSvg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
+                        stTitle.textContent = "Blockchain Integrity Compromised";
+                        stTitle.style.color = "var(--danger)";
+                        stMsg.textContent = "WARNING: Hash mismatch detected in the blockchain network. The data may have been altered maliciously.";
+                    }
+
+                    // UPDATE TABLE
+                    tbody.innerHTML = "";
+                    if (data.blocks && data.blocks.length > 0) {
+                        data.blocks.forEach(b => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td><span class="type-badge">${b.type || 'System Record'}</span></td>
+                                <td style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #475569;">${b.time || '--'}</td>
+                                <td><div class="hash-str">${b.previousHash || '0 (Genesis)'}</div></td>
+                                <td><div class="hash-str" style="color: var(--primary); font-weight: 600;">${b.hash || '--'}</div></td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; font-family: 'Segoe UI', Arial, sans-serif; color: var(--muted);">No personal records found on the blockchain yet.</td></tr>`;
+                    }
+
+                } else {
+                    document.getElementById("statusTitle").textContent = "Verification Failed";
+                    document.getElementById("statusMsg").textContent = "Could not communicate with the blockchain node.";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById("statusTitle").textContent = "Network Error";
+                document.getElementById("statusMsg").textContent = "Connection to the local blockchain node was lost.";
+            }
+        };
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .course-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-info h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .course-info p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            background: #e67e22;
+        }
+
+        .badge-lab {
+            background: #8e44ad;
+        }
+
+        .btn-group button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-attendance {
+            background: #27ae60;
+        }
+
+        .btn-attendance:hover {
+            background: #219150;
+        }
+
+        .btn-marks {
+            background: #2980b9;
+        }
+
+        .btn-marks:hover {
+            background: #1f6391;
+        }
+
+        #noCourses {
+            text-align: center;
+            margin-top: 50px;
+            color: #7f8c8d;
+            font-size: 18px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Global Navigation -->
+    <div
+        style="display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;">
+        <button onclick="window.history.back()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅
+            Back</button>
+        <button onclick="window.history.forward()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward
+            ➡</button>
+        <button onclick="window.location.reload()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻
+            Refresh</button>
+        <button onclick="logout()"
+            style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #e74c3c; color: white; font-weight: 600; margin-left: auto;">Logout</button>
+    </div>
+
+    <div class="container">
+        <h2>My Course Offerings</h2>
+        <div id="courseContainer"></div>
+        <p id="noCourses">You have not been assigned any courses yet.</p>
+    </div>
+
+    <script>
+        const role = localStorage.getItem("role");
+        const email = localStorage.getItem('email');
+        const sessionToken = localStorage.getItem("sessionToken");
+
+        if (!role || role.toLowerCase() !== "teacher" || !sessionToken) {
+            window.location.href = "login.html";
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        async function checkSession() {
+            try {
+                const res = await fetch(window.location.origin + `/auth/verify-session?email=${encodeURIComponent(email)}&token=${encodeURIComponent(sessionToken)}`);
+                if (!res.ok) {
+                    alert("Session conflict: Logged in from another device");
+                    localStorage.clear();
+                    window.location.href = "login.html";
+                }
+            } catch (err) {
+                console.error("Session verification failed", err);
+            }
+        }
+        checkSession();
+
+        async function loadCourses() {
+            try {
+                const res = await fetch(window.location.origin + `/course/by-teacher?teacherEmail=${encodeURIComponent(email)}`);
+                const courses = await res.json();
+
+                const container = document.getElementById("courseContainer");
+                container.innerHTML = "";
+
+                if (!courses || courses.length === 0) {
+                    document.getElementById("noCourses").style.display = "block";
+                    return;
+                }
+
+                courses.forEach(c => {
+                    const badgeClass = c.subjectType === 'LAB' ? 'badge-lab' : '';
+
+                    const el = document.createElement('div');
+                    el.className = 'course-card';
+                    el.innerHTML = `
+                        <div class="course-info">
+                            <h3>${c.courseName} (${c.courseId}) <span class="badge ${badgeClass}">${c.subjectType}</span></h3>
+                            <p><strong>Department:</strong> ${c.department}</p>
+                            <p><strong>Semester:</strong> ${c.semester}</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-attendance" onclick="goToAttendance('${c.courseId}', '${c.department}', '${c.semester}', '${c.subjectType}')">Attendance</button>
+                            <button class="btn-marks" onclick="goToMarks('${c.courseId}', '${c.department}', '${c.semester}', '${c.subjectType}')">Marks</button>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function goToAttendance(courseId, dept, sem, type) {
+            window.location.href = `attendance.html?courseId=${courseId}&dept=${dept}&sem=${sem}&type=${type}`;
+        }
+
+        function goToMarks(courseId, dept, sem, type) {
+            window.location.href = `marks.html?courseId=${courseId}&dept=${dept}&sem=${sem}&type=${type}`;
+        }
+
+        window.onload = loadCourses;
+    </script>
+</body>
+
+</html>

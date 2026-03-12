@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Student Attendance - Blockchain ERP</title>
+    <style>
+        :root {
+            --bg: #f4f7f9;
+            --panel: #ffffff;
+            --accent: #1e293b;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-bg: #eff6ff;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--accent);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR (Match Dashboard) */
+        .sidebar {
+            width: 250px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 24px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--secondary-bg);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .logout-btn {
+            margin: 20px;
+            padding: 10px;
+            background: #ef4444;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 15px 30px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* TABLE STYLES */
+        .table-container {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            max-width: 900px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--secondary-bg);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        tr.warning-row td {
+            background: var(--danger-bg);
+        }
+
+        tr.warning-row:hover td {
+            background: #fee2e2;
+        }
+
+        .perc-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .perc-good {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .perc-bad {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .info-card {
+            background: var(--secondary-bg);
+            border: 1px solid #bfdbfe;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-width: 900px;
+            font-size: 14px;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Student Portal</h2>
+            <div style="font-size: 12px; opacity: 0.8;">Blockchain Secured</div>
+        </div>
+        <div class="sidebar-nav">
+            <a class="nav-item" href="student_dashboard.html">Dashboard Home</a>
+            <a class="nav-item" href="student_marks.html">View Marks</a>
+            <a class="nav-item active" href="student_attendance.html">View Attendance</a>
+            <a class="nav-item" href="student_mar.html">MAR Activities</a>
+            <a class="nav-item" href="student_moocs.html">MOOCs Courses</a>
+            <a class="nav-item" href="student_verify.html">Record Verification</a>
+        </div>
+        <div class="logout-btn" onclick="logout()">Log Out</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="topbar">
+            <h2>Subject Attendance</h2>
+            <div style="font-size: 13px; color: var(--muted); font-weight: 500;">
+                <span id="welcomeName" style="color: var(--accent); font-weight: 700;">Student</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+
+            <div class="info-card">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>A minimum attendance of <strong>75%</strong> is required. Subjects below this threshold are
+                    highlighted in red.</span>
+            </div>
+
+            <div class="table-container">
+                <table id="attTable">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Total Classes</th>
+                            <th>Present</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attBody">
+                        <tr>
+                            <td colspan="4" class="loading">Loading blockchain records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const role = localStorage.getItem("role");
+        const email = localStorage.getItem("email");
+        const studentName = localStorage.getItem("username");
+        const sessionToken = localStorage.getItem("sessionToken");
+
+        if (!role || role.toLowerCase() !== "student" || !sessionToken) {
+            window.location.href = "login.html";
+        }
+
+        // Verify session with backend
+        async function checkSession() {
+            try {
+                const res = await fetch(window.location.origin + `/auth/verify-session?email=${encodeURIComponent(email)}&token=${encodeURIComponent(sessionToken)}`);
+                if (!res.ok) {
+                    alert("Session conflict: Logged in from another device");
+                    localStorage.clear();
+                    window.location.href = "login.html";
+                }
+            } catch (err) {
+                console.error("Session verification failed", err);
+            }
+        }
+        checkSession();
+
+        document.getElementById("welcomeName").textContent = studentName || "Student";
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        window.onload = async () => {
+            const tbody = document.getElementById("attBody");
+            try {
+                const res = await fetch(window.location.origin + `/api/student/attendance?email=${encodeURIComponent(email)}`);
+                if (res.ok) {
+                    const att = await res.json();
+                    tbody.innerHTML = "";
+
+                    if (att.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No attendance records found on the blockchain.</td></tr>`;
+                        return;
+                    }
+
+                    att.forEach(a => {
+                        const tr = document.createElement("tr");
+                        const isWarning = a.percentage < 75;
+                        if (isWarning) tr.classList.add("warning-row");
+
+                        tr.innerHTML = `
+                            <td style="font-weight: 600;">${a.subject || 'Unknown'}</td>
+                            <td>${a.totalClasses}</td>
+                            <td>${a.present}</td>
+                            <td>
+                                <span class="perc-badge ${isWarning ? 'perc-bad' : 'perc-good'}">${a.percentage}%</span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color: #ef4444;">Error fetching attendance.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color: #ef4444;">Connection error.</td></tr>`;
+            }
+        };
+
+    </script>
+</body>
+
+</html>
