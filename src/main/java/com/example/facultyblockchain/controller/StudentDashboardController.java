@@ -80,19 +80,42 @@ public class StudentDashboardController {
             // Calculate MAR score
             int totalMar = 0;
             List<Block> marBlocks = blockchainService.getMarBlocks();
+
+            // First: gather review statuses
+            Map<String, String> marReviewStatuses = new HashMap<>();
             for (Block b : marBlocks) {
-                if (email.equalsIgnoreCase(b.getEmail()) && b.getProjects() != null && !b.getProjects().isEmpty()) {
-                    try {
-                        Map<String, Object> data = objectMapper.readValue(b.getProjects(),
-                                new TypeReference<Map<String, Object>>() {
-                                });
+                if (b.getProjects() == null || b.getProjects().isEmpty()) continue;
+                try {
+                    Map<String, Object> data = objectMapper.readValue(b.getProjects(), new TypeReference<Map<String, Object>>() {});
+                    if ("MENTOR_REVIEW".equals(data.get("action"))) {
+                        String originalHash = (String) data.get("originalHash");
+                        String status = (String) data.get("status");
+                        if (originalHash != null && status != null) {
+                            marReviewStatuses.put(originalHash, status);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // Second: sum points ONLY for Approved blocks
+            for (Block b : marBlocks) {
+                if (b.getProjects() == null || b.getProjects().isEmpty()) continue;
+                if (!email.equalsIgnoreCase(b.getEmail())) continue;
+
+                try {
+                    Map<String, Object> data = objectMapper.readValue(b.getProjects(), new TypeReference<Map<String, Object>>() {});
+                    if ("MENTOR_REVIEW".equals(data.get("action"))) continue;
+
+                    String blockHash = b.getHash();
+                    String status = marReviewStatuses.getOrDefault(blockHash, "Pending");
+
+                    if ("Approved".equalsIgnoreCase(status)) {
                         Object pointsObj = data.get("points");
                         if (pointsObj != null) {
                             totalMar += Integer.parseInt(pointsObj.toString());
                         }
-                    } catch (Exception ignored) {
                     }
-                }
+                } catch (Exception ignored) {}
             }
             summary.put("marScore", totalMar);
 
@@ -274,18 +297,46 @@ public class StudentDashboardController {
         try {
             List<Map<String, Object>> marList = new ArrayList<>();
             List<Block> blocks = blockchainService.getMarBlocks();
+            
+            // First pass: aggregate all reviews
+            Map<String, String> reviewStatuses = new HashMap<>(); // originalHash -> Status
             for (Block b : blocks) {
-                if (email.equalsIgnoreCase(b.getEmail()) && b.getProjects() != null && !b.getProjects().isEmpty()) {
-                    try {
-                        Map<String, Object> data = objectMapper.readValue(b.getProjects(),
-                                new TypeReference<Map<String, Object>>() {
-                                });
+                if (b.getProjects() == null || b.getProjects().isEmpty()) continue;
+                try {
+                    Map<String, Object> data = objectMapper.readValue(b.getProjects(), new TypeReference<Map<String, Object>>() {});
+                    if ("MENTOR_REVIEW".equals(data.get("action"))) {
+                        String originalHash = (String) data.get("originalHash");
+                        String status = (String) data.get("status");
+                        if (originalHash != null && status != null) {
+                            reviewStatuses.put(originalHash, status);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // Second pass: collect student's submissions
+            for (Block b : blocks) {
+                if (b.getProjects() == null || b.getProjects().isEmpty()) continue;
+                try {
+                    Map<String, Object> data = objectMapper.readValue(b.getProjects(), new TypeReference<Map<String, Object>>() {});
+                    
+                    // Skip review blocks
+                    if ("MENTOR_REVIEW".equals(data.get("action"))) continue;
+
+                    // Ensure email matches student
+                    if (b.getEmail() != null && email.equalsIgnoreCase(b.getEmail().trim())) {
                         data.put("hash", b.getHash());
                         marList.add(data);
-                    } catch (Exception ignored) {
                     }
-                }
+                } catch (Exception ignored) {}
             }
+
+            // Third pass: apply statuses synchronously just like MentorController
+            for (Map<String, Object> sub : marList) {
+                String hash = (String) sub.get("hash");
+                sub.put("status", reviewStatuses.getOrDefault(hash, "Pending"));
+            }
+
             return ResponseEntity.ok(marList);
         } catch (Exception e) {
             e.printStackTrace();

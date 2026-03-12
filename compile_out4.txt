@@ -1,0 +1,76 @@
+﻿mvn : WARNING: A 
+terminally deprecated 
+method in 
+sun.misc.Unsafe has 
+been called
+At line:1 char:1
++ mvn compile 2>&1 | 
+Out-File -Encoding 
+utf8 compile_out4.txt; 
+Get-Cont ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpe    
+cified: (WARNING    : 
+A term...has b    een 
+called:Strin    g) [], 
+RemoteExc    eption
+    + FullyQualified   
+ ErrorId : Native    
+CommandError
+ 
+WARNING: sun.misc.Unsaf
+e::objectFieldOffset 
+has been called by com.
+google.common.util.conc
+urrent.AbstractFuture$U
+nsafeAtomicHelper (file
+:/D:/MVN/maven-mvnd-2.0
+.0-rc-3-windows-amd64/m
+vn/lib/guava-33.4.0-jre
+.jar)
+WARNING: Please 
+consider reporting 
+this to the 
+maintainers of class co
+m.google.common.util.co
+ncurrent.AbstractFuture
+$UnsafeAtomicHelper
+WARNING: sun.misc.Unsaf
+e::objectFieldOffset 
+will be removed in a 
+future release
+[WARNING] Unable to find the root directory. Create a .mvn directory in the root directory or add the root="true" attribute on the root project's model to identify it.
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] 1 problem was encountered while building the effective model for 'com.blockchain:blockchain-demo:jar:1.0.0' (use -e to see details)
+[WARNING] 
+[WARNING] Total model problems reported: 1
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] 
+[INFO] -------------------< com.blockchain:blockchain-demo >-------------------
+[INFO] Building blockchain-demo 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ blockchain-demo ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 27 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ blockchain-demo ---
+[INFO] Changes detected - recompiling the module! :input tree
+[INFO] Compiling 28 source files with javac [debug release 17] to target\classes
+[INFO] /C:/Users/sahas/Desktop/Blockchain Final Year Project/src/main/java/com/example/facultyblockchain/controller/StudentDashboardController.java: C:\Users\sahas\Desktop\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\StudentDashboardController.java uses or overrides a deprecated API.
+[INFO] /C:/Users/sahas/Desktop/Blockchain Final Year Project/src/main/java/com/example/facultyblockchain/controller/StudentDashboardController.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/sahas/Desktop/Blockchain Final Year Project/src/main/java/com/example/facultyblockchain/controller/StudentDashboardController.java: C:\Users\sahas\Desktop\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\StudentDashboardController.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/sahas/Desktop/Blockchain Final Year Project/src/main/java/com/example/facultyblockchain/controller/StudentDashboardController.java: Recompile with -Xlint:unchecked for details.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.309 s
+[INFO] Finished at: 2026-03-12T18:40:40+05:30
+[INFO] ------------------------------------------------------------------------
