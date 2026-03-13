@@ -13,7 +13,7 @@ public class MentorAssignmentService {
 
     /**
      * Map of teacher email (lowercase) to their assigned data.
-     * Value format: "Dept|Semester|StartRoll|EndRoll"
+     * Value format: "Dept|PassingYear|StartRoll|EndRoll"
      */
     private Map<String, String> assignments = new HashMap<>();
 
@@ -32,7 +32,7 @@ public class MentorAssignmentService {
                 if (line.trim().isEmpty()) continue;
                 String[] parts = line.split(SEPARATOR);
                 if (parts.length == 5) {
-                    // email | department | semester | startRoll | endRoll
+                    // email | department | passingYear | startRoll | endRoll
                     assignments.put(parts[0].trim().toLowerCase(), 
                         parts[1].trim() + "|" + 
                         parts[2].trim() + "|" + 
@@ -61,18 +61,30 @@ public class MentorAssignmentService {
     }
 
     /**
-     * Assigns a teacher to act as a mentor for a specific department, semester, and roll range.
+     * Assigns a teacher to act as a mentor for a specific department, passing year, and roll range.
      * Only 1 assignment per teacher is supported at a time.
      */
-    public synchronized void assignMentor(String teacherEmail, String department, String semester, int startRoll, int endRoll) {
+    public synchronized void assignMentor(String teacherEmail, String department, String passingYear, int startRoll, int endRoll) {
         if (teacherEmail == null || teacherEmail.isEmpty()) return;
         assignments.put(teacherEmail.trim().toLowerCase(), 
-            department.trim() + "|" + semester.trim() + "|" + startRoll + "|" + endRoll);
+            department.trim() + "|" + passingYear.trim() + "|" + startRoll + "|" + endRoll);
         saveAssignments();
     }
 
+    public synchronized boolean removeMentor(String teacherEmail) {
+        if (teacherEmail == null || teacherEmail.isBlank()) {
+            return false;
+        }
+        String removed = assignments.remove(teacherEmail.trim().toLowerCase());
+        if (removed != null) {
+            saveAssignments();
+            return true;
+        }
+        return false;
+    }
+
     /**
-     * Returns the assigned department, semester, and roll bounds for a given teacher email.
+     * Returns the assigned department, passing year, and roll bounds for a given teacher email.
      * Returns null if unassigned.
      */
     public Map<String, String> getMentorAssignment(String teacherEmail) {
@@ -85,7 +97,8 @@ public class MentorAssignmentService {
 
         Map<String, String> result = new HashMap<>();
         result.put("department", parts[0]);
-        result.put("semester", parts[1]);
+        result.put("passingYear", parts[1]);
+        result.put("semester", parts[1]); // legacy compatibility for older UI callers
         if (parts.length == 4) {
             result.put("startRoll", parts[2]);
             result.put("endRoll", parts[3]);

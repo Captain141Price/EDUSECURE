@@ -35,11 +35,11 @@ public class MentorController {
         try {
             String email = payload.get("teacherEmail");
             String department = payload.get("department");
-            String semester = payload.get("semester");
+            String passingYear = payload.get("passingYear");
             String startRollStr = payload.get("startRoll");
             String endRollStr = payload.get("endRoll");
 
-            if (email == null || department == null || semester == null) {
+            if (email == null || department == null || passingYear == null) {
                 return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Missing fields"));
             }
 
@@ -52,7 +52,7 @@ public class MentorController {
                 return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Invalid roll numbers"));
             }
 
-            mentorAssignmentService.assignMentor(email, department, semester, startRoll, endRoll);
+            mentorAssignmentService.assignMentor(email, department, passingYear, startRoll, endRoll);
             return ResponseEntity.ok(Map.of("status", "success", "message", "Mentor assigned successfully"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
@@ -76,6 +76,16 @@ public class MentorController {
         return ResponseEntity.ok(mentorAssignmentService.getAllAssignments());
     }
 
+    @DeleteMapping("/assign")
+    public ResponseEntity<?> removeAssignment(@RequestParam String teacherEmail) {
+        boolean removed = mentorAssignmentService.removeMentor(teacherEmail);
+        if (!removed) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("status", "error", "message", "No mentor assignment found for this faculty"));
+        }
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Mentor assignment removed successfully"));
+    }
+
     // 3. Fetch MAR submissions for Mentor's assigned students
     @GetMapping("/mar/submissions")
     public ResponseEntity<?> getMarSubmissions(@RequestParam String teacherEmail) {
@@ -86,12 +96,12 @@ public class MentorController {
             }
 
             String targetDept = assignment.get("department");
-            String targetSem = assignment.get("semester");
+            String targetPassingYear = assignment.get("passingYear");
             int startRoll = Integer.parseInt(assignment.getOrDefault("startRoll", "0"));
             int endRoll = Integer.parseInt(assignment.getOrDefault("endRoll", "9999"));
 
             // Get matching students
-            List<StudentExcelModel> assignedStudents = studentExcelService.filterStudents(targetDept, "", targetSem);
+            List<StudentExcelModel> assignedStudents = studentExcelService.filterStudents(targetDept, targetPassingYear, null);
             Set<String> assignedEmails = new HashSet<>();
             for (StudentExcelModel s : assignedStudents) {
                 if(s.getEmail() != null) {
@@ -173,11 +183,11 @@ public class MentorController {
             }
 
             String targetDept = assignment.get("department");
-            String targetSem = assignment.get("semester");
+            String targetPassingYear = assignment.get("passingYear");
             int startRoll = Integer.parseInt(assignment.getOrDefault("startRoll", "0"));
             int endRoll = Integer.parseInt(assignment.getOrDefault("endRoll", "9999"));
 
-            List<StudentExcelModel> assignedStudents = studentExcelService.filterStudents(targetDept, "", targetSem);
+            List<StudentExcelModel> assignedStudents = studentExcelService.filterStudents(targetDept, targetPassingYear, null);
             Set<String> assignedEmails = new HashSet<>();
             for (StudentExcelModel s : assignedStudents) {
                 if(s.getEmail() != null) {

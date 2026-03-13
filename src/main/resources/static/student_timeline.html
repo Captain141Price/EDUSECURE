@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Timeline — Blockchain ERP</title>
+<style>
+:root {
+  --bg: #f4f7f9;
+  --panel: #ffffff;
+  --accent: #1e293b;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #7c3aed;
+  --teal: #0d9488;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--accent);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--primary);
+  color: white;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header h1 { font-size: 20px; font-weight: 700; }
+.header .back-btn {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.header .back-btn:hover { background: rgba(255,255,255,0.35); }
+
+/* ── SEARCH BOX ── */
+.search-section {
+  max-width: 800px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+}
+.search-card {
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 32px;
+  text-align: center;
+}
+.search-card h2 { font-size: 22px; margin-bottom: 8px; }
+.search-card p  { color: var(--muted); margin-bottom: 24px; font-size: 15px; }
+.search-row {
+  display: flex;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.search-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-row input:focus { border-color: var(--primary); }
+.search-row button {
+  padding: 12px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.search-row button:hover { background: var(--primary-hover); }
+.search-row button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+/* ── STUDENT IDENTITY BADGE ── */
+.identity-card {
+  max-width: 800px;
+  margin: 24px auto 0;
+  padding: 0 24px;
+}
+.identity-inner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.identity-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.identity-name   { font-size: 18px; font-weight: 700; }
+.identity-sub    { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.identity-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-dept  { background: #dbeafe; color: #1d4ed8; }
+.badge-roll  { background: #dcfce7; color: #166534; }
+.badge-sems  { background: #fef3c7; color: #92400e; }
+
+/* ── TIMELINE ── */
+.timeline-section {
+  max-width: 900px;
+  margin: 32px auto 60px;
+  padding: 0 24px;
+}
+.timeline-section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--accent);
+}
+.sem-card {
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.sem-header {
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.sem-label { font-size: 17px; font-weight: 700; }
+.sem-dept  { font-size: 13px; opacity: 0.75; margin-left: auto; }
+.sem-chevron { transition: transform 0.25s; font-size: 18px; }
+.sem-chevron.open { transform: rotate(180deg); }
+
+/* TABS */
+.sem-body    { display: none; padding: 0; }
+.sem-body.open { display: block; }
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+  padding: 0 16px;
+  gap: 4px;
+}
+.tab-btn {
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.tab-btn:hover  { color: var(--accent); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-count {
+  display: inline-block;
+  background: #e2e8f0;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 5px;
+  font-weight: 600;
+}
+.tab-btn.active .tab-count { background: #dbeafe; color: var(--primary); }
+
+.tab-panel { display: none; padding: 24px; }
+.tab-panel.active { display: block; }
+
+/* DATA TABLES */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th {
+  background: #f1f5f9;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fafc; }
+
+/* STATUS PILLS */
+.status {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+.status-approved  { background: #dcfce7; color: #166534; }
+.status-rejected  { background: #fee2e2; color: #991b1b; }
+.status-pending   { background: #fef3c7; color: #92400e; }
+
+/* ATT BAR */
+.att-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+.att-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.att-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.att-bar-pct  { font-size: 13px; font-weight: 700; min-width: 40px; text-align: right; }
+.att-low  { color: var(--danger); }
+.att-mid  { color: var(--warning); }
+.att-high { color: var(--success); }
+
+/* EMPTY STATE */
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* STATUS BAR */
+#statusBar {
+  max-width: 800px;
+  margin: 16px auto 0;
+  padding: 0 24px;
+}
+.status-msg {
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.status-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.status-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* SPINNER */
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 3px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <a href="teacher_list.html" class="back-btn">← Back</a>
+  <h1>🔍 Student Academic Timeline</h1>
+</div>
+
+<!-- SEARCH -->
+<div class="search-section">
+  <div class="search-card">
+    <h2>Search Student History</h2>
+    <p>Enter a university roll number to view the complete academic record across active and archived student history.</p>
+    <div class="search-row">
+      <input type="text" id="rollInput" placeholder="e.g. 12200122032"
+             onkeydown="if(event.key==='Enter') doSearch()">
+      <button id="searchBtn" onclick="doSearch()">Search</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusBar"></div>
+
+<!-- STUDENT IDENTITY -->
+<div class="identity-card" id="identityCard" style="display:none"></div>
+
+<!-- TIMELINE -->
+<div class="timeline-section" id="timelineSection" style="display:none">
+  <h3 id="timelineTitle"></h3>
+  <div id="timelineContainer"></div>
+</div>
+
+<script>
+// ── SEARCH ───────────────────────────────────────────────────────────
+async function doSearch() {
+  const roll = document.getElementById('rollInput').value.trim();
+  if (!roll) { showStatus('Please enter a university roll number.', 'error'); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Searching…';
+  clearResults();
+
+  try {
+    const res  = await fetch(`/archive/timeline?universityRoll=${encodeURIComponent(roll)}`);
+    const data = await res.json();
+
+    if (!data.found) {
+      showStatus('No active or archived records found for roll number: <strong>' + escHtml(roll) + '</strong>.', 'info');
+      return;
+    }
+
+    renderIdentityCard(data);
+    renderTimeline(data);
+    clearStatus();
+
+  } catch (err) {
+    showStatus('Network error: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Search';
+  }
+}
+
+// ── IDENTITY CARD ────────────────────────────────────────────────────
+function renderIdentityCard(data) {
+  const initials = (data.studentName || '?').split(' ')
+      .map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+  document.getElementById('identityCard').innerHTML = `
+    <div class="identity-inner">
+      <div class="identity-avatar">${initials}</div>
+      <div>
+        <div class="identity-name">${escHtml(data.studentName)}</div>
+        <div class="identity-sub">${escHtml(data.email)}</div>
+        <div class="identity-badges">
+          <span class="badge badge-dept">${escHtml(data.department)}</span>
+          <span class="badge badge-roll">Roll: ${escHtml(data.universityRoll)}</span>
+          <span class="badge badge-sems">${data.totalSemesters} record section${data.totalSemesters !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('identityCard').style.display = 'block';
+}
+
+// ── TIMELINE ─────────────────────────────────────────────────────────
+function renderTimeline(data) {
+  const semesters = data.semesters;
+  document.getElementById('timelineTitle').textContent =
+      'Academic Timeline — ' + data.studentName;
+
+  const container = document.getElementById('timelineContainer');
+  container.innerHTML = '';
+
+  semesters.forEach((sem, idx) => {
+    const label   = sem.label || sem.semesterTag || 'Student Records';
+    const semYear = sem.passingYear || '';
+    const uid     = 'sem_' + label.replace(/[^a-zA-Z0-9]/g, '_');
+
+    const marksCount = (sem.marks || []).length;
+    const attCount   = (sem.attendance || []).length;
+    const marCount   = (sem.mar || []).length;
+    const moocsCount = (sem.moocs || []).length;
+
+    const card = document.createElement('div');
+    card.className = 'sem-card';
+    card.innerHTML = `
+      <div class="sem-header" onclick="toggleSem('${uid}')">
+        <div>
+          <div class="sem-label">${escHtml(label)}${semYear ? `  <span style="opacity:0.6;font-weight:400;font-size:14px">(${escHtml(semYear)})</span>` : ''}</div>
+        </div>
+        <div class="sem-dept">${escHtml(sem.department || data.department)}</div>
+        <span class="sem-chevron ${idx === 0 ? 'open' : ''}" id="chev_${uid}">▾</span>
+      </div>
+      <div class="sem-body ${idx === 0 ? 'open' : ''}" id="body_${uid}">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab(event,'${uid}','marks')">
+            📊 Marks <span class="tab-count">${marksCount}</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event,'${uid}','att')">
+            📋 Attendance <span class="tab-count">${attCount}</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event,'${uid}','mar')">
+            🏆 MAR <span class="tab-count">${marCount}</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event,'${uid}','moocs')">
+            🎓 MOOCs <span class="tab-count">${moocsCount}</span>
+          </button>
+        </div>
+        <div class="tab-panel active" id="${uid}_marks">${renderMarks(sem.marks, sem)}</div>
+        <div class="tab-panel" id="${uid}_att">${renderAttendance(sem.attendance, sem)}</div>
+        <div class="tab-panel" id="${uid}_mar">${renderMar(sem.mar, sem)}</div>
+        <div class="tab-panel" id="${uid}_moocs">${renderMoocs(sem.moocs, sem)}</div>
+      </div>`;
+    container.appendChild(card);
+  });
+
+  document.getElementById('timelineSection').style.display = 'block';
+}
+
+// ── RENDERERS ────────────────────────────────────────────────────────
+function renderMarks(marks, sem) {
+  if (!marks || !marks.length) return '<div class="empty">No marks data archived for this semester.</div>';
+  let html = '<table class="data-table"><thead><tr>'
+           + '<th>Semester</th><th>Subject Name</th><th>Subject Code</th>';
+  // Build dynamic exam columns from the first entry that has them
+  const examLabels = marks.find(m => m.examLabels && m.examLabels.length)?.examLabels || [];
+  examLabels.forEach(l => { html += `<th>${escHtml(l)}</th>`; });
+  html += '</tr></thead><tbody>';
+  marks.forEach(m => {
+    html += `<tr><td>${escHtml(m.semester || sem.semester || '—')}</td>
+             <td><strong>${escHtml(m.subjectName || 'Unknown')}</strong></td>
+             <td>${escHtml(m.subjectCode || m.courseCode || '')}</td>`;
+    const arr = m.marks || [];
+    examLabels.forEach((_, i) => {
+      const v = arr[i];
+      html += `<td>${v !== null && v !== undefined ? escHtml(String(v)) : '—'}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderAttendance(att, sem) {
+  if (!att || !att.length) return '<div class="empty">No attendance data archived for this semester.</div>';
+  let html = '<table class="data-table"><thead><tr>'
+           + '<th>Semester</th><th>Subject Name</th><th>Course Code</th><th>Present</th><th>Total</th><th>Attendance</th>'
+           + '</tr></thead><tbody>';
+  att.forEach(a => {
+    const pct   = parseFloat(a.percentage || 0);
+    const cls   = pct < 60 ? 'att-low' : pct < 75 ? 'att-mid' : 'att-high';
+    const color = pct < 60 ? '#ef4444' : pct < 75 ? '#f59e0b' : '#10b981';
+    html += `<tr>
+      <td>${escHtml(a.semester || sem.semester || '—')}</td>
+      <td>${escHtml(a.subjectName || a.courseName || '')}</td>
+      <td>${escHtml(a.courseCode || a.courseId || '')}</td>
+      <td>${a.present}</td>
+      <td>${a.total}</td>
+      <td>
+        <div class="att-bar-wrap">
+          <div class="att-bar-bg">
+            <div class="att-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div>
+          </div>
+          <span class="att-bar-pct ${cls}">${pct.toFixed(1)}%</span>
+        </div>
+      </td></tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderMar(mar, sem) {
+  if (!mar || !mar.length) return '<div class="empty">No MAR activities archived for this semester.</div>';
+  let totalApproved = 0;
+  let html = '<table class="data-table"><thead><tr>'
+           + '<th>Semester</th><th>Activity Name</th><th>Category</th><th>Status</th><th>Mentor</th><th>Points</th>'
+           + '</tr></thead><tbody>';
+  mar.forEach(m => {
+    const st    = (m.status || 'Pending').toLowerCase();
+    const stCls = st === 'approved' ? 'status-approved'
+                : st === 'rejected' ? 'status-rejected' : 'status-pending';
+    if (st === 'approved') totalApproved += parseInt(m.points || 0);
+    html += `<tr>
+      <td>${escHtml(m.semester || sem.semester || '—')}</td>
+      <td>${escHtml(m.activityName || m.activity || '')}</td>
+      <td>${escHtml(m.category || '')}</td>
+      <td><span class="status ${stCls}">${escHtml(m.approvalStatus || m.status || 'Pending')}</span></td>
+      <td>${escHtml(m.mentor || '')}</td>
+      <td>${escHtml(String(m.points || 0))}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  html += `<div style="padding:12px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--border)">
+             Total approved MAR points: <strong style="color:var(--success)">${totalApproved}</strong>
+           </div>`;
+  return html;
+}
+
+function renderMoocs(moocs, sem) {
+  if (!moocs || !moocs.length) return '<div class="empty">No MOOCs submissions archived for this semester.</div>';
+  let html = '<table class="data-table"><thead><tr>'
+           + '<th>Semester</th><th>Course Name</th><th>Platform</th><th>Completion Date</th><th>Certificate</th><th>Credits</th>'
+           + '</tr></thead><tbody>';
+  moocs.forEach(m => {
+    html += `<tr>
+      <td>${escHtml(m.semester || sem.semester || '—')}</td>
+      <td><strong>${escHtml(m.courseName || '')}</strong></td>
+      <td>${escHtml(m.platform || '')}</td>
+      <td>${escHtml(m.completionDate || '—')}</td>
+      <td>${escHtml(m.certificate || '—')}</td>
+      <td>${escHtml(String(m.credits || 0))}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── UI HELPERS ───────────────────────────────────────────────────────
+function switchTab(event, uid, tab) {
+  const tabBar = event.target.closest('.tab-bar');
+  tabBar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const body = document.getElementById('body_' + uid);
+  body.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(uid + '_' + tab).classList.add('active');
+}
+
+function toggleSem(uid) {
+  const body = document.getElementById('body_' + uid);
+  const chev = document.getElementById('chev_' + uid);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function showStatus(msg, type) {
+  document.getElementById('statusBar').innerHTML =
+    `<div class="status-msg status-${type}">${msg}</div>`;
+}
+function clearStatus() {
+  document.getElementById('statusBar').innerHTML = '';
+}
+function clearResults() {
+  document.getElementById('identityCard').style.display  = 'none';
+  document.getElementById('timelineSection').style.display = 'none';
+  document.getElementById('identityCard').innerHTML       = '';
+  document.getElementById('timelineContainer').innerHTML  = '';
+}
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Focus input on load
+document.getElementById('rollInput').focus();
+</script>
+</body>
+</html>

@@ -21,10 +21,14 @@ public class BlockchainService {
     
     // --- FIVE SEPARATE FILES ---
     private static final String FACULTY_FILE_PATH = System.getProperty("user.dir") + "/FacultyBlockchain.dat";
-    private static final String ATTENDANCE_FILE_PATH = System.getProperty("user.dir") + "/AttendanceBlockchain.dat";
-    private static final String MARKS_FILE_PATH = System.getProperty("user.dir") + "/MarksBlockchain.dat";
-    private static final String MAR_FILE_PATH = System.getProperty("user.dir") + "/MarBlockchain.dat";     // <-- NEW
-    private static final String MOOCS_FILE_PATH = System.getProperty("user.dir") + "/MoocsBlockchain.dat"; // <-- NEW
+    private static final String ATTENDANCE_FILE_PATH = System.getProperty("user.dir") + "/attendance.dat";
+    private static final String MARKS_FILE_PATH = System.getProperty("user.dir") + "/marks.dat";
+    private static final String MAR_FILE_PATH = System.getProperty("user.dir") + "/mar.dat";
+    private static final String MOOCS_FILE_PATH = System.getProperty("user.dir") + "/moocs.dat";
+    private static final String LEGACY_ATTENDANCE_FILE_PATH = System.getProperty("user.dir") + "/AttendanceBlockchain.dat";
+    private static final String LEGACY_MARKS_FILE_PATH = System.getProperty("user.dir") + "/MarksBlockchain.dat";
+    private static final String LEGACY_MAR_FILE_PATH = System.getProperty("user.dir") + "/MarBlockchain.dat";
+    private static final String LEGACY_MOOCS_FILE_PATH = System.getProperty("user.dir") + "/MoocsBlockchain.dat";
 
     public BlockchainService() {
         loadBlockchains();
@@ -156,6 +160,49 @@ public class BlockchainService {
     }
 
     /**
+     * Clears ONLY the 4 student data chains (Attendance, Marks, MAR, MOOCs).
+     * Faculty chain is preserved — it is permanent and never semester-scoped.
+     * Called by SemesterRolloverService after archiving is complete.
+     */
+    public void clearStudentChains() {
+        attendanceChain.clear();
+        marksChain.clear();
+        marChain.clear();
+        moocsChain.clear();
+
+        saveChain(attendanceChain, ATTENDANCE_FILE_PATH);
+        saveChain(marksChain,      MARKS_FILE_PATH);
+        saveChain(marChain,        MAR_FILE_PATH);
+        saveChain(moocsChain,      MOOCS_FILE_PATH);
+
+        System.out.println("[Rollover] Student blockchain chains cleared (Faculty preserved).");
+    }
+
+    public synchronized void overwriteStudentChains(
+            List<Block> attendanceBlocks,
+            List<Block> marksBlocks,
+            List<Block> marBlocks,
+            List<Block> moocsBlocks) {
+
+        attendanceChain.clear();
+        attendanceChain.addAll(attendanceBlocks);
+
+        marksChain.clear();
+        marksChain.addAll(marksBlocks);
+
+        marChain.clear();
+        marChain.addAll(marBlocks);
+
+        moocsChain.clear();
+        moocsChain.addAll(moocsBlocks);
+
+        saveChain(attendanceChain, ATTENDANCE_FILE_PATH);
+        saveChain(marksChain, MARKS_FILE_PATH);
+        saveChain(marChain, MAR_FILE_PATH);
+        saveChain(moocsChain, MOOCS_FILE_PATH);
+    }
+
+    /**
      * Clears ALL blockchain data for the 5 Block chains (Faculty, Attendance, Marks, MAR, MOOCs).
      * Both the in-memory lists AND the .dat files are cleared so no stale data remains in memory.
      */
@@ -177,10 +224,10 @@ public class BlockchainService {
 
     private void loadBlockchains() {
         loadSpecificChain(facultyChain, FACULTY_FILE_PATH, "Faculty");
-        loadSpecificChain(attendanceChain, ATTENDANCE_FILE_PATH, "Attendance");
-        loadSpecificChain(marksChain, MARKS_FILE_PATH, "Marks");
-        loadSpecificChain(marChain, MAR_FILE_PATH, "MAR");       // <-- NEW
-        loadSpecificChain(moocsChain, MOOCS_FILE_PATH, "MOOCs"); // <-- NEW
+        loadSpecificChain(attendanceChain, ATTENDANCE_FILE_PATH, LEGACY_ATTENDANCE_FILE_PATH, "Attendance");
+        loadSpecificChain(marksChain, MARKS_FILE_PATH, LEGACY_MARKS_FILE_PATH, "Marks");
+        loadSpecificChain(marChain, MAR_FILE_PATH, LEGACY_MAR_FILE_PATH, "MAR");
+        loadSpecificChain(moocsChain, MOOCS_FILE_PATH, LEGACY_MOOCS_FILE_PATH, "MOOCs");
     }
 
     @SuppressWarnings("unchecked")
@@ -192,5 +239,19 @@ public class BlockchainService {
             chain.clear();
             chain.addAll(loaded);
         } catch (Exception e) {}
+    }
+
+    private void loadSpecificChain(List<Block> chain, String primaryFilePath, String legacyFilePath, String chainName) {
+        File primary = new File(primaryFilePath);
+        if (primary.exists()) {
+            loadSpecificChain(chain, primaryFilePath, chainName);
+            return;
+        }
+
+        File legacy = new File(legacyFilePath);
+        if (legacy.exists()) {
+            loadSpecificChain(chain, legacyFilePath, chainName);
+            saveChain(chain, primaryFilePath);
+        }
     }
 }

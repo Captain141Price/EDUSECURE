@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student Details</title>
+
+    <style>
+        /* ======== General Page Styling ======== */
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+
+            background: url('https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSGoeVgyGSL6dxoGuNFkkVAHoL9e5d5v3e2ZDzpRFzQV55qrmLf')
+                        no-repeat center center fixed;
+            background-size: cover;
+
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+
+            /* IMPORTANT */
+            align-items: flex-start;
+            overflow-y: auto;
+            padding: 40px 0;
+            color: #fff;
+        }
+
+        /* ======== Container ======== */
+        .container {
+            width: 95%;
+            max-width: 500px;
+            background: rgba(40, 40, 40, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 15px;
+            padding: 35px 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(10px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        /* ======== Title ======== */
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        /* ======== Input Fields ======== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #222;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: #666;
+        }
+
+        .form-group input:focus {
+            box-shadow: 0 0 8px #ffcc00;
+            background: #fff;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #222;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+.form-group select:focus {
+    box-shadow: 0 0 8px #ffcc00;
+    background: #fff;
+}
+
+        .password-group {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+        }
+
+        /* ======== Button ======== */
+        .save-btn {
+            background: #ff6600;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .save-btn:hover {
+            background: #ff8533;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+<!-- Global Navigation -->
+<div style="position: absolute; top: 0; left: 0; display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 50;">
+  <button onclick="window.history.back()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅ Back</button>
+  <button onclick="window.history.forward()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward ➡</button>
+  <button onclick="window.location.reload()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻ Refresh</button>
+  <button onclick="goBackToHome()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600; margin-left: 10px;">🏠 Homepage</button>
+</div>
+<script>
+  function goBackToHome() {
+      const r = localStorage.getItem('role');
+      if (r && (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')) {
+          window.location.href = 'student_dashboard.html';
+      } else {
+          window.location.href = 'teacher_list.html';
+      }
+  }
+</script>
+    <div class="container" style="margin-top: 50px;">
+        <h1>Student Details</h1>
+
+        <div class="form-group">
+            <input type="text" id="name" placeholder="Name" readonly>
+        </div>
+
+        <div class="form-group">
+            <input type="email" id="email" placeholder="Email" readonly>
+        </div>
+
+        <!-- <div class="form-group password-group">
+            <input type="password" id="password" placeholder="Password" readonly disabled>
+            <img id="togglePasswordIcon"
+                src="eye-closed.png"
+                class="toggle-password"
+                onclick="togglePassword()">
+        </div> -->
+
+        <div class="form-group">
+            <input type="number" id="classRoll" placeholder="Class Roll" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="uniroll" placeholder="University Roll">
+        </div>
+
+        <div class="form-group">
+            <select id="department" required>
+                <option value="">Select Department</option>
+                <option value="CSE1">CSE1</option>
+                <option value="CSE2">CSE2</option>
+                <option value="CSE3">CSE3</option>
+                <option value="AIML">AIML</option>
+                <option value="IT">IT</option>
+                <option value="ECE">ECE</option>
+                <option value="EE">EE</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select id="sem">
+                <option value="">Select Semester</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select id="passingyear">
+                <option value="">Select Passing Year</option>
+                <!-- Years 2020–2040 -->
+                <script>
+                    for (let y = 2020; y <= 2040; y++) {
+                        document.write(`<option value="${y}">${y}</option>`);
+                    }
+                </script>
+            </select>
+        </div>
+
+        <button class="save-btn" onclick="saveProfile()">Save Profile</button>
+        
+    </div>
+
+    <!-- OTP Modal -->
+    <div id="otpModal" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(0,0,0,0.5);
+        justify-content:center;
+        align-items:center;
+    ">
+    <div style="background:white; padding:20px; border-radius:10px; text-align:center; width:300px; color:#222">
+        <h3>OTP Verification</h3>
+        <p id="otpEmailText"></p>
+        <input type="text" id="otpInput" placeholder="Enter OTP" style="width:80%; padding:8px; margin:10px 0;">
+        <br>
+        <button onclick="verifyEnteredOTP()">Verify</button>
+        <button onclick="closeOTPModal()">Cancel</button>
+    </div>
+    </div>
+
+    <script>
+        const apiBase = window.location.origin + "/api"; // adjust if needed
+
+        let originalData = {};
+        let pendingUpdateData = null;   // ⬅ store data temporarily
+        let adminEmail = localStorage.getItem('email');            // ⬅ logged-in admin email
+
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const email = params.get("email");
+
+            if (!email) {
+                alert("Invalid access");
+                return;
+            }
+
+            const res = await fetch(
+                `/student/by-email?email=${encodeURIComponent(email)}`
+            );
+
+            const data = await res.json();
+
+            // Prefill fields
+            document.getElementById("name").value = data.name;
+            document.getElementById("email").value = data.email;
+            document.getElementById("classRoll").value = data.classRoll;
+            document.getElementById("uniroll").value = data.roll;
+            document.getElementById("department").value = data.department;
+            document.getElementById("sem").value = data.semester;
+            document.getElementById("passingyear").value = data.passingYear;
+
+            // Save original snapshot
+            originalData = {
+                ...data
+            };
+        };
+
+        // function togglePassword() {
+        //     const pwd = document.getElementById("password");
+        //     const icon = document.getElementById("togglePasswordIcon");
+
+        //     if (pwd.type === "password") {
+        //         pwd.type = "text";
+        //         icon.src = "eye-open.png";
+        //     } else {
+        //         pwd.type = "password";
+        //         icon.src = "eye-closed.png";
+        //     }
+        // }
+
+        async function saveProfile() {
+            const updatedData = {
+                email: email.value.trim(),          // identity key
+                classRoll: classRoll.value.trim(),
+                roll: uniroll.value.trim(),
+                semester: sem.value,
+                passingYear: passingyear.value,
+                department: department.value
+            };
+
+            // Validation
+            if (Object.values(updatedData).some(v => !v)) {
+                alert("All fields are required");
+                return;
+            }
+
+            // Change detection (Excel fields only)
+            const isChanged =
+                updatedData.classRoll !== originalData.classRoll ||
+                updatedData.roll !== originalData.roll ||
+                updatedData.semester !== originalData.semester ||
+                updatedData.passingYear !== originalData.passingYear ||
+                updatedData.department !== originalData.department;
+
+            if (!isChanged) {
+                alert("No changes detected");
+                return;
+            }
+
+            pendingUpdateData = updatedData;
+            otpVerify(adminEmail, 'EDIT');
+        }
+
+        async function otpVerify(emailParam, name) {
+            try {
+                // decode because we encoded when building onclick
+                const decodedEmail = decodeURIComponent(emailParam);
+                currentEmail = decodedEmail;
+                currentName = name;
+
+                // Step 1: Send OTP
+                const sendRes = await fetch(`${apiBase}/send-otp?email=${encodeURIComponent(decodedEmail)}`, {
+                    method: 'POST'
+                });
+                const sendData = await sendRes.json();
+                alert(sendData.message);
+
+                // Step 2: Show OTP modal
+                document.getElementById("otpEmailText").innerText = `Enter OTP sent to ${decodedEmail}`;
+                document.getElementById("otpModal").style.display = "flex";
+            } catch (err) {
+                console.error(err);
+                alert("Error sending OTP. Check console.");
+            }
+        }
+
+        async function verifyEnteredOTP() {
+            const otp = document.getElementById("otpInput").value;
+            if (!otp) {
+                alert("Please enter OTP!");
+                return;
+            }
+
+            try {
+                const verifyRes = await fetch(`${apiBase}/verify-otp?email=${encodeURIComponent(currentEmail)}&otp=${otp}`);
+                const verifyData = await verifyRes.json();
+
+                if (verifyData.status === "success") {
+                    alert("OTP verified successfully!");
+                    closeOTPModal();
+                    await finalizeStudentUpdate();
+                } else {
+                    alert("Invalid or expired OTP!");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error verifying OTP. Check console.");
+            }
+        }
+
+        async function finalizeStudentUpdate() {
+            if (!pendingUpdateData) return;
+
+            try {
+                const res = await fetch(window.location.origin + "/student/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(pendingUpdateData)
+                });
+
+                const result = await res.json();
+                alert(result.message);
+
+                pendingUpdateData = null; // cleanup
+
+            } catch (err) {
+                console.error(err);
+                alert("Update failed");
+            }
+        }
+
+        function closeOTPModal() {
+            document.getElementById("otpModal").style.display = "none";
+            document.getElementById("otpInput").value = "";
+        }
+    </script>
+</body>
+</html>

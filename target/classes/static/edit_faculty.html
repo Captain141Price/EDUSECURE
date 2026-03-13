@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Edit Faculty — Faculty Blockchain</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f9fcff;
+      font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      padding: 28px 12px;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin: auto;
+    }
+    header.page-header {
+      background: #0d6efd;
+      color: white;
+      padding: 18px;
+      border-radius: 12px 12px 0 0;
+      text-align: center;
+    }
+    header.page-header h2 {
+      margin: 0;
+      font-weight: 600;
+    }
+    .nav-tabs {
+      justify-content: center;
+    }
+    .nav-tabs .nav-link {
+      border-radius: 20px;
+      padding: 8px 14px;
+      margin-right: 8px;
+      color: #214a82;
+      border: 1px solid #d6e8ff;
+    }
+    .nav-tabs .nav-link.active {
+      background: #0d6efd;
+      color: white;
+      border-color: #0d6efd;
+    }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #223;
+      margin-bottom: 8px;
+    }
+    textarea.form-control, input.form-control {
+      resize: vertical;
+    }
+    .btn-primary-gradient {
+      background: #0d6efd;
+      border: none;
+      color: white;
+    }
+    .btn-primary-gradient:hover {
+      background: #0056b3;
+    }
+    .bibtex-container {
+      background: #fff;
+      border: 1px solid #e1e8f0;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+    .bibtex-buttons button {
+      margin-top: 10px;
+      margin-right: 6px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #0d6efd;
+      color: white;
+      cursor: pointer;
+    }
+    .bibtex-buttons button:hover {
+      background-color: #0056b3;
+    }
+    .bib-output .pub-item {
+      background: #f9fafb;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+<!-- Global Navigation -->
+<div style="position: absolute; top: 0; left: 0; display: flex; gap: 10px; padding: 15px 20px; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 50;">
+  <button onclick="window.history.back()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">⬅ Back</button>
+  <button onclick="window.history.forward()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">Forward ➡</button>
+  <button onclick="window.location.reload()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: 600; color: #334155;">↻ Refresh</button>
+  <button onclick="goBackToHome()" style="padding: 8px 14px; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600; margin-left: 10px;">🏠 Homepage</button>
+</div>
+<script>
+  function goBackToHome() {
+      const r = localStorage.getItem('role');
+      if (r && (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')) {
+          window.location.href = 'student_dashboard.html';
+      } else {
+          window.location.href = 'teacher_list.html';
+      }
+  }
+</script>
+  <div class="container" style="max-width: 900px; margin-top: 50px;">
+    <div class="card overflow-hidden">
+      <header class="page-header">
+        <h2>Edit Faculty Details</h2>
+      </header>
+
+      <div class="p-4">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">General</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-research" type="button">Research</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-activity" type="button">Professional</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-participation" type="button">Participation</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-projects" type="button">Projects</button></li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- GENERAL -->
+          <div class="tab-pane fade show active" id="tab-general">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="section-title">Email (Read-only)</div>
+                <input id="emailField" class="form-control" readonly />
+              </div>
+              <div class="col-md-6">
+                <div class="section-title">Teaching Experience</div>
+                <input id="teachingExp" class="form-control" />
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <div class="section-title">Area of Specialization</div>
+              <textarea id="specialization" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="mt-3">
+              <div class="section-title">Academic Qualifications</div>
+              <textarea id="qualifications" class="form-control" rows="4"></textarea>
+            </div>
+
+            <div class="row g-3 mt-3">
+              <div class="col-md-6">
+                <div class="section-title">Date of Joining</div>
+                <input id="dateOfJoining" type="date" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <div class="section-title">Date of Assignment</div>
+                <input id="dateOfAssign" type="date" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <!-- RESEARCH -->
+          <div class="tab-pane fade" id="tab-research">
+            <div class="text-center">
+              <h5 class="section-title mb-3">Research Publications</h5>
+              <div class="bibtex-container mx-auto" style="max-width:800px;">
+                <p>Paste your BibTeX entries and click Convert:</p>
+                <textarea id="bibInput" class="form-control" placeholder="Paste BibTeX entries here..." rows="6"></textarea>
+                <div class="bibtex-buttons">
+                  <button onclick="convertBibtex()">Convert</button>
+                </div>
+                <div id="bibOutput" class="bib-output mt-3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVITY -->
+          <div class="tab-pane fade" id="tab-activity">
+            <div class="section-title">Professional Activity</div>
+            <textarea id="professionalActivity" class="form-control" rows="5"></textarea>
+          </div>
+
+          <!-- PARTICIPATION -->
+          <div class="tab-pane fade" id="tab-participation">
+            <div class="section-title">Faculty Participation</div>
+            <textarea id="facultyParticipation" class="form-control" rows="5"></textarea>
+          </div>
+
+          <!-- PROJECTS -->
+          <div class="tab-pane fade" id="tab-projects">
+            <div class="section-title">Projects (UG / PG)</div>
+            <textarea id="projects" class="form-control" rows="6"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-center">
+          <button id="saveBtn" class="btn btn-primary-gradient px-5 py-2" onclick="saveUpdates()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+ <script>
+  const apiBase = window.location.origin + "/api";
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get("email");
+
+  // Load Faculty Data
+  document.addEventListener("DOMContentLoaded", async () => {
+    if (!email) {
+      alert(" No email provided in URL.");
+      return;
+    }
+    document.getElementById("emailField").value = email;
+
+    await loadFacultyData();
+  });
+
+  async function loadFacultyData() {
+    try {
+      const res = await fetch(`${apiBase}/get?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+
+      // handle controller's error response shaped as JSON {status:"error", message:...}
+      if (!res.ok || (data && data.status === "error")) {
+        alert(data.message || "Faculty not found");
+        return;
+      }
+
+      // fill form fields dynamically
+      for (const key in data) {
+        if (document.getElementById(key)) {
+          // avoid putting non-string values into inputs
+          document.getElementById(key).value = data[key] == null ? "" : String(data[key]);
+        }
+      }
+
+      // restore raw BibTeX if present
+      if (data.rawBibtex) {
+        document.getElementById("bibInput").value = data.rawBibtex;
+      }
+
+      // fill bibtex output (formatted publications)
+      if (data.publications) {
+        const bibOutput = document.getElementById("bibOutput");
+        bibOutput.innerHTML = "";
+        data.publications.split("\n").forEach(line => {
+          const div = document.createElement("div");
+          div.className = "pub-item";
+          div.textContent = line;
+          bibOutput.appendChild(div);
+        });
+      } else {
+        // clear output if none
+        document.getElementById("bibOutput").innerHTML = "";
+      }
+
+      // Display faculty info summary
+      showFacultyInfo(data);
+
+    } catch (err) {
+      console.error(err);
+      alert("Could not load faculty data from backend.");
+    }
+  }
+
+  // Saving Updates
+  async function saveUpdates() {
+    try {
+      // Ensure the formatted output matches current textarea contents
+      convertBibtex();
+
+      const formData = new FormData();
+      formData.append("email", email);
+
+      const fields = [
+        "specialization", "teachingExp", "qualifications",
+        "dateOfJoining", "dateOfAssign",
+        "professionalActivity", "facultyParticipation", "projects"
+      ];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        formData.append(id, el ? el.value.trim() : "");
+      });
+
+      // publications (formatted)
+      const publications = Array.from(document.querySelectorAll("#bibOutput .pub-item"))
+        .map(div => div.textContent.trim())
+        .join("\n");
+      formData.append("publications", publications);
+
+      // raw BibTeX input
+      const rawBibtex = document.getElementById("bibInput").value.trim();
+      formData.append("rawBibtex", rawBibtex);
+
+      // Optional: disable save button while request in-flight
+      const btn = document.getElementById("saveBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      const res = await fetch(`${apiBase}/update`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      // handle both HTTP error and JSON status error
+      if (!res.ok || (data && data.status === "error")) {
+        alert("Update failed: " + (data.message || "unknown error"));
+      } else {
+        alert("Faculty updated successfully and stored on blockchain.");
+        await loadFacultyData(); // reload and show updated info
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error communicating with backend.");
+    } finally {
+      const btn = document.getElementById("saveBtn");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Save Changes';
+      }
+    }
+  }
+
+  // Showing faculty info
+  function showFacultyInfo(data) {
+    let infoBox = document.getElementById("facultyInfoBox");
+    if (!infoBox) {
+      infoBox = document.createElement("div");
+      infoBox.id = "facultyInfoBox";
+      infoBox.className = "mt-4 p-3 border rounded bg-light";
+      document.querySelector(".card .p-4").appendChild(infoBox);
+    }
+
+    infoBox.innerHTML = `
+      <h5 class="mb-3 text-center text-primary"> Faculty Profile (Blockchain Record)</h5>
+      <div><b>Name:</b> ${data.name || "—"}</div>
+      <div><b>Email:</b> ${data.email || "—"}</div>
+      <div><b>Department:</b> ${data.department || "—"}</div>
+      <div><b>Specialization:</b> ${data.specialization || "—"}</div>
+      <div><b>Experience:</b> ${data.teachingExp || "—"}</div>
+      <div><b>Qualifications:</b> ${data.qualifications || "—"}</div>
+      <div><b>Date of Joining:</b> ${data.dateOfJoining || "—"}</div>
+      <div><b>Date of Assignment:</b> ${data.dateOfAssign || "—"}</div>
+      <div><b>Professional Activity:</b> ${data.professionalActivity || "—"}</div>
+      <div><b>Faculty Participation:</b> ${data.facultyParticipation || "—"}</div>
+      <div><b>Projects:</b> ${data.projects || "—"}</div>
+      <div><b>Publications:</b><br><pre style="white-space:pre-wrap;background:#fff;padding:8px;border-radius:6px;">${data.publications || "—"}</pre></div>
+    `;
+  }
+
+  // BibTeX converter
+  function splitEntries(text) {
+    return text.split(/(?=@\w+)/).map(s => s.trim()).filter(Boolean);
+  }
+  function parseEntry(entry) {
+    const obj = {};
+    const regex = /(\w+)\s*=\s*(\{([^}]*)\}|"([^"]*)")/g;
+    let match;
+    while ((match = regex.exec(entry)) !== null) {
+      const key = match[1].toLowerCase();
+      const val = match[3] || match[4] || "";
+      obj[key] = val.trim();
+    }
+    return obj;
+  }
+  function formatAuthors(raw) {
+    if (!raw) return "";
+    const authors = raw.split(/\s+and\s+/i).map(a => a.trim());
+    return authors.map(a => {
+      if (a.includes(",")) {
+        const [last, first] = a.split(",").map(x => x.trim());
+        return first ? `${first} ${last}` : last;
+      }
+      return a;
+    }).join(", ");
+  }
+  function formatCitation(f) {
+    const fields = ["title", "author", "journal", "volume", "number", "pages", "year", "publisher", "organization", "booktitle"];
+    Object.keys(f).forEach(k => { if (!fields.includes(k)) delete f[k]; });
+    let parts = [];
+    if (f.author) parts.push(formatAuthors(f.author) + ":");
+    if (f.title) parts.push(f.title + ".");
+    let pubParts = [];
+    if (f.journal) pubParts.push(f.journal);
+    if (f.booktitle) pubParts.push(f.booktitle);
+    if (f.volume && f.number) pubParts.push(`${f.volume}(${f.number})`);
+    else if (f.volume) pubParts.push(f.volume);
+    if (f.pages) pubParts.push(f.pages);
+    if (pubParts.length) parts.push(pubParts.join(", "));
+    if (f.year) parts.push(f.year + ".");
+    if (f.publisher) parts.push(f.publisher + ".");
+    if (f.organization) parts.push(f.organization + ".");
+    return parts.join(" ");
+  }
+  function convertBibtex() {
+    const input = document.getElementById("bibInput").value.trim();
+    const output = document.getElementById("bibOutput");
+    output.innerHTML = "";
+    const entries = splitEntries(input);
+    if (entries.length === 0) {
+      output.textContent = "No BibTeX entries found.";
+      return;
+    }
+    entries.forEach(entry => {
+      const parsed = parseEntry(entry);
+      const formatted = formatCitation(parsed);
+      const div = document.createElement("div");
+      div.className = "pub-item";
+      div.textContent = formatted || "Invalid entry";
+      output.appendChild(div);
+    });
+  }
+</script>
+
+</body>
+</html>

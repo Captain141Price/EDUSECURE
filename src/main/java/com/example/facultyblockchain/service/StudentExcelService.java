@@ -2,6 +2,7 @@ package com.example.facultyblockchain.service;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import com.example.facultyblockchain.model.StudentExcelModel;
@@ -20,6 +21,7 @@ public class StudentExcelService {
     public static final String DEFAULT_STUDENT_PASSWORD = "stcet@123";
 
     private static final String FILE_PATH = System.getProperty("user.dir") + "/StudentData.xlsx";
+    private static final String ACTIVE_STUDENTS_FILE_PATH = System.getProperty("user.dir") + "/active_students.dat";
 
     public synchronized void saveStudent(
             String name,
@@ -67,6 +69,7 @@ public class StudentExcelService {
             workbook.write(fos);
             fos.close();
             workbook.close();
+            syncActiveStudentsDat();
 
             System.out.println("Student saved to Excel");
 
@@ -124,6 +127,7 @@ public class StudentExcelService {
             workbook.write(fos);
             fos.close();
             workbook.close();
+            syncActiveStudentsDat();
 
             System.out.println("Student saved to Excel with classRoll=" + classRoll);
 
@@ -135,6 +139,14 @@ public class StudentExcelService {
 
     @org.springframework.beans.factory.annotation.Autowired
     private LoginBlockchainService loginBlockchainService;
+
+    @PostConstruct
+    public void initializeActiveStudentsSnapshot() {
+        File file = new File(FILE_PATH);
+        if (file.exists()) {
+            syncActiveStudentsDat();
+        }
+    }
 
     public int processExcelUpload(org.springframework.web.multipart.MultipartFile file) throws Exception {
         int addedCount = 0;
@@ -305,9 +317,6 @@ public class StudentExcelService {
             Workbook workbook = new XSSFWorkbook(new FileInputStream(file));
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Keep track of rows to remove (Alumni)
-            List<Row> rowsToRemove = new ArrayList<>();
-
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null)
@@ -320,36 +329,11 @@ public class StudentExcelService {
                 String currentSemStr = semesterCell.getStringCellValue();
                 try {
                     int sem = Integer.parseInt(currentSemStr);
-                    sem++;
-
-                    if (sem > 8) {
-                        // Move to Alumni
-                        String name = row.getCell(2) != null ? row.getCell(2).getStringCellValue() : "Unknown";
-                        String email = row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "Unknown";
-                        System.out.println("Moving " + email + " to Alumni (Completed 8 semesters).");
-
-                        // We will record them in an alumni.dat file via LoginBlockchainService
-                        loginBlockchainService.addUser(name, email, "stcet@123", "alumni");
-
-                        rowsToRemove.add(row);
-                    } else {
-                        // Update semester
-                        semesterCell.setCellValue(String.valueOf(sem));
+                    if (sem < 8) {
+                        semesterCell.setCellValue(String.valueOf(sem + 1));
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("Invalid semester format for row " + i + ": " + currentSemStr);
-                }
-            }
-
-            // Remove alumni rows from the Excel
-            // Must be done carefully from bottom to top to avoid shifting issues
-            for (int i = rowsToRemove.size() - 1; i >= 0; i--) {
-                Row row = rowsToRemove.get(i);
-                int rowIndex = row.getRowNum();
-                sheet.removeRow(row);
-                // Shift rows up if this isn't the last row
-                if (rowIndex >= 1 && rowIndex < sheet.getLastRowNum()) {
-                    sheet.shiftRows(rowIndex + 1, sheet.getLastRowNum(), -1);
                 }
             }
 
@@ -357,6 +341,7 @@ public class StudentExcelService {
             workbook.write(fos);
             fos.close();
             workbook.close();
+            syncActiveStudentsDat();
 
             System.out.println("Global student promotion completed");
 
@@ -399,6 +384,7 @@ public class StudentExcelService {
             FileOutputStream fos = new FileOutputStream(FILE_PATH);
             workbook.write(fos);
             fos.close();
+            syncActiveStudentsDat();
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to update student", e);
@@ -446,5 +432,74 @@ public class StudentExcelService {
             }
         }
         return filtered;
+    }
+
+    public synchronized List<StudentExcelModel> removeStudentsForArchive(String passingYear, String semester) {
+        List<StudentExcelModel> removedStudents = new ArrayList<>();
+
+        try (FileInputStream fis = new FileInputStream(FILE_PATH);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            List<Integer> rowsToRemove = new ArrayList<>();
+            DataFormatter formatter = new DataFormatter();
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    continue;
+                }
+
+                String rowPassingYear = formatter.formatCellValue(row.getCell(5)).trim();
+                String rowSemester = formatter.formatCellValue(row.getCell(6)).trim();
+
+                if (!passingYear.equals(rowPassingYear) || !semester.equals(rowSemester)) {
+                    continue;
+                }
+
+                removedStudents.add(new StudentExcelModel(
+                        formatter.formatCellValue(row.getCell(2)).trim(),
+                        formatter.formatCellValue(row.getCell(1)).trim(),
+                        formatter.formatCellValue(row.getCell(0)).trim(),
+                        formatter.formatCellValue(row.getCell(3)).trim(),
+                        rowSemester,
+                        rowPassingYear,
+                        formatter.formatCellValue(row.getCell(4)).trim()
+                ));
+                rowsToRemove.add(i);
+            }
+
+            for (int i = rowsToRemove.size() - 1; i >= 0; i--) {
+                int rowIndex = rowsToRemove.get(i);
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    sheet.removeRow(row);
+                }
+                if (rowIndex < sheet.getLastRowNum()) {
+                    sheet.shiftRows(rowIndex + 1, sheet.getLastRowNum(), -1);
+                }
+            }
+
+            try (FileOutputStream fos = new FileOutputStream(FILE_PATH)) {
+                workbook.write(fos);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to remove archived students from active registry", e);
+        }
+
+        syncActiveStudentsDat();
+        return removedStudents;
+    }
+
+    private synchronized void syncActiveStudentsDat() {
+        saveActiveStudentsSnapshot(getAllStudents());
+    }
+
+    private void saveActiveStudentsSnapshot(List<StudentExcelModel> students) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(ACTIVE_STUDENTS_FILE_PATH))) {
+            out.writeObject(new ArrayList<>(students));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to sync active_students.dat", e);
+        }
     }
 }

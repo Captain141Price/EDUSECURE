@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marks Grid – Blockchain ERP</title>
+
+  <style>
+    :root {
+      --bg: #f4f7f9;
+      --panel: #ffffff;
+      --accent: #1e293b;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary-bg: #eff6ff;
+      --border: #e2e8f0;
+      --ok: #10b981;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--accent);
+    }
+
+    .page-wrapper { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ─── NAV ─── */
+    .global-nav {
+      display: flex; gap: 10px; padding: 12px 20px;
+      background: #fff; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50; align-items: center;
+    }
+    .global-nav button {
+      padding: 7px 14px; font-size: 13px; cursor: pointer;
+      border: 1px solid #cbd5e1; border-radius: 6px;
+      background: #f8fafc; font-weight: 600; color: #334155;
+    }
+    .global-nav .home-btn {
+      border: none; background: var(--primary); color: #fff;
+    }
+
+    /* ─── LAYOUT ─── */
+    .container { display: flex; flex: 1; overflow: hidden; }
+
+    .sidebar {
+      width: 280px; background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 18px; gap: 12px; overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.03); z-index: 10;
+    }
+
+    .sidebar-title {
+      font-weight: 800; font-size: 15px; color: var(--accent);
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+
+    .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+    /* ─── HEADER ─── */
+    .page-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .page-header h2 { font-weight: 800; font-size: 20px; }
+    .subject-badge {
+      background: var(--secondary-bg); color: var(--primary);
+      padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    }
+    .exam-badge {
+      background: #fef3c7; color: #92400e;
+      padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    }
+
+    /* ─── TOOLBAR ─── */
+    .toolbar {
+      display: flex; gap: 10px; align-items: center;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      background: var(--primary); color: #fff; cursor: pointer;
+      font-weight: 600; font-size: 13px;
+      box-shadow: 0 2px 4px rgba(37,99,235,0.3);
+      transition: all 0.2s ease;
+    }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn.ghost {
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      color: var(--accent); box-shadow: none;
+    }
+    .btn.ghost:hover { background: #e2e8f0; }
+    .btn.danger {
+      background: #fef2f2; border: 1px solid #fca5a5;
+      color: var(--bad); box-shadow: none;
+    }
+
+    /* ─── TABLE ─── */
+    .table-wrap {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; overflow: auto; max-height: 65vh;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    table { border-collapse: collapse; width: 100%; }
+    th, td {
+      border: 1px solid var(--border); padding: 12px 10px;
+      text-align: center; white-space: nowrap;
+    }
+    thead th {
+      background: var(--secondary-bg); color: var(--primary-hover);
+      font-weight: 700; position: sticky; top: 0; z-index: 2;
+    }
+    td.name-cell {
+      text-align: left; padding-left: 14px; font-weight: 600;
+      background: #f8fafc; position: sticky; left: 0; z-index: 1;
+    }
+    td.roll-cell {
+      background: #f8fafc; position: sticky; left: 0; z-index: 1;
+    }
+    .cell-input {
+      width: 70px; border: none; background: transparent;
+      text-align: center; font-size: 14px; color: var(--accent);
+      padding: 2px 4px; border-radius: 4px;
+    }
+    .cell-input:focus {
+      outline: none; background: var(--secondary-bg);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
+    }
+    td.avg-cell {
+      font-weight: 700; color: var(--primary-hover);
+      background: #f0f9ff !important;
+    }
+    .remove-row { font-size: 11px; margin-left: 8px; color: var(--bad); cursor: pointer; }
+
+    /* ─── STATUS ─── */
+    .save-status { font-size: 13px; font-weight: 600; color: var(--ok); margin-left: 6px; }
+
+    /* ─── BLOCKS SIDEBAR ─── */
+    .folder-item {
+      padding: 10px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+      font-weight: 600; display: flex; justify-content: space-between;
+      align-items: center; transition: all 0.2s; font-size: 13px;
+    }
+    .folder-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .folder-content { display: none; padding-left: 8px; border-left: 2px solid #e2e8f0; margin-left: 8px; margin-bottom: 8px; }
+    .folder-content.expanded { display: block; }
+    .folder-icon { font-size: 11px; transition: transform 0.2s; }
+    .folder-icon.open { transform: rotate(90deg); }
+
+    .block-item {
+      padding: 10px; margin-bottom: 8px; margin-top: 4px;
+      border: 1px solid var(--border); border-left: 4px solid #cbd5e1;
+      border-radius: 8px; background: var(--panel); font-size: 12px;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .block-item:hover { background: #f8fafc; border-left-color: var(--primary); transform: translateX(2px); }
+
+    .small { font-size: 12px; color: var(--muted); }
+
+    /* ─── MODAL (block inspector) ─── */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(15,23,42,0.6); backdrop-filter: blur(2px);
+      display: none; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-box {
+      background: var(--panel); width: 90%; max-width: 700px; max-height: 85vh;
+      border-radius: 12px; border: 1px solid var(--border); overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.12);
+    }
+    .modal-header {
+      padding: 16px 22px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: #f8fafc;
+    }
+    .modal-header h3 { margin: 0; font-size: 16px; font-weight: 800; }
+    .modal-body {
+      padding: 18px; overflow: auto; flex: 1;
+      font-family: monospace; font-size: 12px; color: #334155; background: #f1f5f9;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <script src="filter.js"></script>
+
+  <div class="page-wrapper">
+
+    <!-- ─── GLOBAL NAV ─── -->
+    <div class="global-nav">
+      <button onclick="window.history.back()">⬅ Back</button>
+      <button onclick="window.history.forward()">Forward ➡</button>
+      <button onclick="window.location.reload()">↻ Refresh</button>
+      <button class="home-btn" onclick="goHome()">🏠 Homepage</button>
+    </div>
+    <script>
+      function goHome() {
+        const r = localStorage.getItem('role') || '';
+        window.location.href = (r === 'ROLE_STUDENT' || r.toLowerCase() === 'student')
+          ? 'student_dashboard.html' : 'teacher_list.html';
+      }
+    </script>
+
+    <div class="container">
+
+      <!-- ─── SIDEBAR: block history ─── -->
+      <aside class="sidebar">
+        <div class="sidebar-title">📋 Save History</div>
+        <button class="btn ghost" id="refreshBlocksBtn" style="font-size:12px; padding:6px 10px;">↻ Refresh</button>
+        <div id="blockList" style="flex:1; overflow-y:auto;"></div>
+        <div class="small" style="text-align:center; border-top:1px solid var(--border); padding-top:10px;">
+          Total Blocks: <strong id="blockCount">0</strong>
+        </div>
+      </aside>
+
+      <!-- ─── MAIN CONTENT ─── -->
+      <div class="content">
+
+        <div class="page-header">
+          <h2>Marks Entry</h2>
+          <span class="subject-badge" id="subjectBadge">—</span>
+          <span class="exam-badge" id="examCountBadge">— Exam Columns</span>
+          <span class="save-status" id="saveStatus"></span>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+          <button class="btn" id="addStudentBtn" style="display:none;">+ Add Student</button>
+          <button class="btn ghost" id="undoBtn" disabled>Undo</button>
+          <button class="btn ghost" id="redoBtn" disabled>Redo</button>
+          <div style="flex:1"></div>
+          <button class="btn ghost" id="exportPdfBtn">Export PDF</button>
+          <button class="btn ghost" id="exportExcelBtn">Export Excel</button>
+          <button class="btn danger" id="clearAllBtn">✖ Clear All</button>
+          <button class="btn" id="saveBtn">💾 Save to Blockchain</button>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrap">
+          <table id="marksTable">
+            <thead>
+              <tr id="headerRow"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /container -->
+  </div><!-- /page-wrapper -->
+
+  <!-- Block Inspector Modal -->
+  <div class="modal-overlay" id="inspectorModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Block Inspector</h3>
+        <button class="btn ghost" id="closeInspectorBtn" style="font-size:12px; padding:6px 10px;">Close</button>
+      </div>
+      <pre class="modal-body" id="inspectorBody">Loading...</pre>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const API_BASE = window.location.origin;
+    const params   = new URLSearchParams(window.location.search);
+
+    // ─── Context from URL params (set by teacher dashboard) ─────────────────
+    const teacherEmail  = params.get('email')    || localStorage.getItem('email')    || 'Unknown';
+    const courseId      = params.get('courseId') || localStorage.getItem('block_subject') || '';
+    const courseType    = (params.get('type')    || 'CA').toUpperCase();  // 'CA' or 'PCA'
+    const courseDept    = params.get('dept')     || localStorage.getItem('block_dept') || '';
+    const courseSem     = params.get('sem')      || localStorage.getItem('block_year') || '';
+
+    // Persist so refreshes keep context
+    if (courseId)   localStorage.setItem('block_subject', courseId);
+    if (courseDept) localStorage.setItem('block_dept',    courseDept);
+    if (courseSem)  localStorage.setItem('block_year',    courseSem);
+
+    // ─── Exam count based on type ───────────────────────────────────────────
+    // CA/THEORY = 4 exams, PCA/LAB = 2 exams
+    const EXAM_COUNT = (courseType === 'PCA' || courseType === 'LAB') ? 2 : 4;
+    const EXAM_LABELS = Array.from({ length: EXAM_COUNT }, (_, i) => `Exam ${i + 1}`);
+
+    // Badge display
+    document.getElementById('subjectBadge').textContent   = courseId || 'No Subject';
+    document.getElementById('examCountBadge').textContent = `${EXAM_COUNT} Exam Columns`;
+
+    // ─── State ───────────────────────────────────────────────────────────────
+    let students  = [];   // [{name, email, classRoll, univRoll, marks:[]}]
+    let blocks    = [];
+
+    // ─── Undo / Redo ─────────────────────────────────────────────────────────
+    let undoStack = [], redoStack = [];
+    function captureState() { undoStack.push(JSON.stringify(students)); redoStack = []; updateUndoRedo(); }
+    function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(students)); students = JSON.parse(undoStack.pop()); renderTable(); updateUndoRedo(); }
+    function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(students)); students = JSON.parse(redoStack.pop()); renderTable(); updateUndoRedo(); }
+    function updateUndoRedo() {
+      document.getElementById('undoBtn').disabled = undoStack.length === 0;
+      document.getElementById('redoBtn').disabled = redoStack.length === 0;
+    }
+
+    // ─── Render ───────────────────────────────────────────────────────────────
+    function renderTable() {
+      // Header
+      const hr = document.getElementById('headerRow');
+      hr.innerHTML = '';
+      const headerCols = ['Class Roll', 'Student', ...EXAM_LABELS, 'Average'];
+      headerCols.forEach(label => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        hr.appendChild(th);
+      });
+      // Remove col header removed for teachers
+
+      // Body
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      students.forEach((st, si) => {
+        const tr = document.createElement('tr');
+
+        // Class Roll
+        const rollTd = document.createElement('td');
+        rollTd.className = 'roll-cell';
+        rollTd.textContent = st.classRoll || '—';
+        tr.appendChild(rollTd);
+
+        // Name
+        const nameTd = document.createElement('td');
+        nameTd.className = 'name-cell';
+        nameTd.textContent = st.name;
+        tr.appendChild(nameTd);
+
+        // Exam cells
+        for (let ei = 0; ei < EXAM_COUNT; ei++) {
+          const td = document.createElement('td');
+          const inp = document.createElement('input');
+          inp.className = 'cell-input';
+          inp.type = 'number'; inp.min = '0'; inp.max = '100';
+          inp.value = st.marks[ei] != null ? st.marks[ei] : '';
+          inp.placeholder = '—';
+          inp.oninput = () => {
+            const val = inp.value.trim();
+            st.marks[ei] = val === '' ? null : parseFloat(val);
+            updateAvg(tr, si);
+          };
+          td.appendChild(inp);
+          tr.appendChild(td);
+        }
+
+        // Average (computed, read-only)
+        const avgTd = document.createElement('td');
+        avgTd.className = 'avg-cell';
+        tr.appendChild(avgTd);
+        updateAvg(tr, si);
+
+        // Remove button functionality removed for teachers
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateAvg(tr, si) {
+      const vals = students[si].marks.filter(v => v != null && !isNaN(v));
+      const avg  = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+      tr.querySelector('.avg-cell').textContent = avg != null ? avg.toFixed(2) : '—';
+    }
+
+    // ─── Student CRUD ─────────────────────────────────────────────────────────
+    async function addStudent() {
+      const selected = await window.showFilterModal();
+      if (selected && selected.length > 0) {
+        captureState();
+        selected.forEach(s => {
+          // avoid duplicates
+          if (students.some(ex => ex.email && ex.email === s.email)) return;
+          students.push({
+            name:      s.name      || '',
+            email:     s.email     || '',
+            classRoll: s.classRoll || '',
+            univRoll:  s.roll      || '',
+            marks:     Array(EXAM_COUNT).fill(null)
+          });
+        });
+        renderTable();
+      }
+    }
+
+    function removeStudent(si) {
+      if (!confirm('Remove this student?')) return;
+      captureState();
+      students.splice(si, 1);
+      renderTable();
+    }
+
+    // ─── Save ─────────────────────────────────────────────────────────────────
+    async function saveGrid() {
+      const btn = document.getElementById('saveBtn');
+      const status = document.getElementById('saveStatus');
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      const payload = {
+        email:        teacherEmail,
+        savedAt:      new Date().toISOString(),
+        meta: {
+          subjectName:    courseId,
+          departmentName: courseDept,
+          year:           courseSem,
+          examType:       courseType,
+          examCount:      EXAM_COUNT
+        },
+        students,
+        examLabels: EXAM_LABELS
+      };
+
+      try {
+        const res = await fetch(API_BASE + '/api/marks/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        status.style.color = 'var(--ok)';
+        status.textContent = '✓ Saved successfully!';
+        await loadBlocks();
+      } catch (err) {
+        status.style.color = 'var(--bad)';
+        status.textContent = 'Error: ' + err.message;
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 Save to Blockchain';
+        setTimeout(() => { status.textContent = ''; }, 3500);
+      }
+    }
+
+    // ─── Load from blockchain ─────────────────────────────────────────────────
+    async function loadLatestBlock() {
+      try {
+        const res = await fetch(`${API_BASE}/api/marks/chain?email=${encodeURIComponent(teacherEmail)}`);
+        if (!res.ok) return;
+        const rawBlocks = await res.json();
+
+        // Find the latest block for our specific courseId
+        const filtered = Array.isArray(rawBlocks) ? rawBlocks.filter(b => {
+          const meta = b.data && b.data.meta;
+          return meta && (meta.subjectName || '').toLowerCase() === courseId.toLowerCase();
+        }) : [];
+
+        if (filtered.length > 0) {
+          const latest = filtered[filtered.length - 1];
+          const d = latest.data;
+          if (Array.isArray(d.students)) {
+            students = d.students.map(s => ({
+              name:      s.name      || '',
+              email:     s.email     || '',
+              classRoll: s.classRoll || '',
+              univRoll:  s.univRoll  || '',
+              marks:     Array.isArray(s.marks)
+                ? s.marks.slice(0, EXAM_COUNT).concat(Array(Math.max(0, EXAM_COUNT - s.marks.length)).fill(null))
+                : Array(EXAM_COUNT).fill(null)
+            }));
+            renderTable();
+          }
+        }
+      } catch (e) { console.warn('Could not load latest block:', e); }
+    }
+
+    async function loadBlocks() {
+      try {
+        const res = await fetch(`${API_BASE}/api/marks/chain?email=${encodeURIComponent(teacherEmail)}`);
+        if (!res.ok) throw new Error(res.status);
+        const rawBlocks = await res.json();
+
+        blocks = (Array.isArray(rawBlocks) ? rawBlocks : []).map((b, i) => ({
+          index: i + 1,
+          timestamp: (b.data && b.data.savedAt) ? new Date(b.data.savedAt).getTime() : Date.now(),
+          hash: b.hash,
+          previousHash: b.previousHash,
+          data: b.data
+        })).reverse();
+
+        renderBlocks();
+        document.getElementById('blockCount').textContent = blocks.length;
+      } catch (e) { console.warn('loadBlocks error', e); }
+    }
+
+    function renderBlocks() {
+      const box = document.getElementById('blockList');
+      box.innerHTML = '';
+      if (!blocks.length) {
+        box.innerHTML = '<div class="small" style="text-align:center;margin-top:16px;">No history found.</div>';
+        return;
+      }
+
+      // Group by subject name
+      const groups = {};
+      blocks.forEach(b => {
+        const title = (b.data && b.data.meta && b.data.meta.subjectName) ? b.data.meta.subjectName : `Block #${b.index}`;
+        if (!groups[title]) groups[title] = [];
+        groups[title].push(b);
+      });
+
+      for (const [title, grpBlocks] of Object.entries(groups)) {
+        const folder = document.createElement('div');
+        const header = document.createElement('div');
+        header.className = 'folder-item';
+        header.innerHTML = `<span style="color:var(--primary)">${title} (${grpBlocks.length})</span><span class="folder-icon">▶</span>`;
+
+        const content = document.createElement('div');
+        content.className = 'folder-content';
+
+        grpBlocks.forEach(b => {
+          const item = document.createElement('div');
+          item.className = 'block-item';
+          const ts = b.timestamp ? new Date(b.timestamp).toLocaleString() : 'Recent';
+          const hash = b.hash ? b.hash.slice(0, 12) + '…' : '';
+          item.innerHTML = `<b style="color:var(--primary)">Block #${b.index}</b><br>
+            <span class="small">${ts}</span><br>
+            <span class="small" style="font-family:monospace">${hash}</span>`;
+
+          // Load + Inspect buttons
+          const btnRow = document.createElement('div');
+          btnRow.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+
+          const loadBtn = document.createElement('button');
+          loadBtn.className = 'btn ghost';
+          loadBtn.style.cssText = 'padding:3px 8px; font-size:11px;';
+          loadBtn.textContent = 'Load';
+          loadBtn.onclick = () => loadBlockData(b);
+
+          const inspBtn = document.createElement('button');
+          inspBtn.className = 'btn ghost';
+          inspBtn.style.cssText = 'padding:3px 8px; font-size:11px;';
+          inspBtn.textContent = 'Inspect';
+          inspBtn.onclick = () => openInspector(b);
+
+          btnRow.appendChild(loadBtn);
+          btnRow.appendChild(inspBtn);
+          item.appendChild(btnRow);
+          content.appendChild(item);
+        });
+
+        header.onclick = () => {
+          content.classList.toggle('expanded');
+          header.querySelector('.folder-icon').classList.toggle('open');
+        };
+        folder.appendChild(header);
+        folder.appendChild(content);
+        box.appendChild(folder);
+      }
+    }
+
+    function loadBlockData(b) {
+      if (!b || !b.data || !Array.isArray(b.data.students)) return;
+      captureState();
+      students = b.data.students.map(s => ({
+        name:      s.name      || '',
+        email:     s.email     || '',
+        classRoll: s.classRoll || '',
+        univRoll:  s.univRoll  || '',
+        marks:     Array.isArray(s.marks)
+          ? s.marks.slice(0, EXAM_COUNT).concat(Array(Math.max(0, EXAM_COUNT - s.marks.length)).fill(null))
+          : Array(EXAM_COUNT).fill(null)
+      }));
+      renderTable();
+    }
+
+    function openInspector(b) {
+      document.getElementById('inspectorBody').textContent = JSON.stringify(b, null, 2);
+      document.getElementById('inspectorModal').style.display = 'flex';
+    }
+
+    // ─── Export ───────────────────────────────────────────────────────────────
+    function getExportName(base) {
+      const parts = [base, courseId || 'Marks'];
+      if (courseDept) parts.push(courseDept);
+      if (courseSem)  parts.push(`Sem${courseSem}`);
+      return parts.join('_').replace(/[^a-z0-9_]/gi, '') + '_' + courseType;
+    }
+
+    document.getElementById('exportPdfBtn').onclick = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('landscape');
+      const tbl = document.getElementById('marksTable');
+      const clone = tbl.cloneNode(true);
+      clone.querySelectorAll('input').forEach((inp, i) => {
+        const orig = tbl.querySelectorAll('input')[i];
+        inp.parentNode.replaceChild(document.createTextNode(orig.value), inp);
+      });
+      clone.querySelectorAll('button').forEach(b => b.remove());
+      const filename = getExportName('Marks') + '.pdf';
+      doc.text(filename.replace('.pdf',''), 14, 15);
+      doc.autoTable({ html: clone, startY: 20, theme: 'grid', styles: { fontSize: 8 }, headStyles: { fillColor: [37, 99, 235] } });
+      doc.save(filename);
+    };
+
+    document.getElementById('exportExcelBtn').onclick = () => {
+      const tbl = document.getElementById('marksTable');
+      const clone = tbl.cloneNode(true);
+      clone.querySelectorAll('input').forEach((inp, i) => {
+        const orig = tbl.querySelectorAll('input')[i];
+        inp.parentNode.replaceChild(document.createTextNode(orig.value), inp);
+      });
+      clone.querySelectorAll('button').forEach(b => b.remove());
+      const wb = XLSX.utils.table_to_book(clone, { sheet: 'Marks' });
+      XLSX.writeFile(wb, getExportName('Marks') + '.xlsx');
+    };
+
+    // ─── Wire events ──────────────────────────────────────────────────────────
+    document.getElementById('addStudentBtn').onclick  = addStudent;
+    document.getElementById('saveBtn').onclick        = saveGrid;
+    document.getElementById('undoBtn').onclick        = undo;
+    document.getElementById('redoBtn').onclick        = redo;
+    document.getElementById('refreshBlocksBtn').onclick = loadBlocks;
+    document.getElementById('closeInspectorBtn').onclick = () =>
+      document.getElementById('inspectorModal').style.display = 'none';
+    document.getElementById('inspectorModal').onclick = e => {
+      if (e.target === document.getElementById('inspectorModal'))
+        document.getElementById('inspectorModal').style.display = 'none';
+    };
+    document.getElementById('clearAllBtn').onclick = () => {
+      if (!confirm('Clear all student rows?')) return;
+      captureState(); students = []; renderTable();
+    };
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    renderTable();
+    loadLatestBlock().then(() => {
+      // After loading any saved block, auto-populate students if the grid is still empty
+      // (i.e. this course has never been saved yet)
+      if (students.length === 0) autoLoadStudents();
+      loadBlocks();
+    });
+
+    /**
+     * Auto-populates the marks grid from course enrollment (stored persistently by admin).
+     * Only called when no saved block exists for this course yet.
+     */
+    async function autoLoadStudents() {
+      if (!courseId) return;
+      try {
+        const res = await fetch(`/course/enrollment?courseId=${encodeURIComponent(courseId)}`);
+        if (!res.ok) return;
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0 && students.length === 0) {
+          captureState();
+          list.forEach(s => {
+            students.push({
+              name:      s.name      || '',
+              email:     s.email     || '',
+              classRoll: s.classRoll || '',
+              univRoll:  s.roll      || '',
+              marks:     Array(EXAM_COUNT).fill(null)
+            });
+          });
+          renderTable();
+        }
+      } catch (e) {
+        console.warn('autoLoadStudents error:', e);
+      }
+    }
+
+  })();
+  </script>
+</body>
+
+</html>

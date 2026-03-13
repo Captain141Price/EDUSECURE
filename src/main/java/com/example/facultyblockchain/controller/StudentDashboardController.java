@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/student")
@@ -24,6 +25,9 @@ public class StudentDashboardController {
 
     @Autowired
     private BlockchainService blockchainService;
+
+    @Autowired
+    private com.example.facultyblockchain.service.SubjectCatalogService subjectCatalogService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -188,39 +192,61 @@ public class StudentDashboardController {
                         // Read marks array: [{name, email, classRoll, univRoll, marks:[n1,n2,...]}]
                         List<Object> marksList = (List<Object>) st.get("marks");
                         double total = 0;
-                        int count = 0;
+                        List<Double> validMarks = new ArrayList<>();
                         if (marksList != null) {
                             for (Object cellVal : marksList) {
                                 if (cellVal != null && !cellVal.toString().trim().isEmpty()) {
                                     try {
-                                        total += Double.parseDouble(cellVal.toString());
-                                        count++;
+                                        double m = Double.parseDouble(cellVal.toString());
+                                        total += m;
+                                        validMarks.add(m);
                                     } catch (NumberFormatException ignored) {
+                                        validMarks.add(null);
                                     }
+                                } else {
+                                    validMarks.add(null);
                                 }
                             }
                         }
-                        double avg = count == 0 ? 0 : total / count;
-
-                        // Grade logic
-                        String grade = "F";
-                        if (avg >= 90)      grade = "O";
-                        else if (avg >= 80) grade = "E";
-                        else if (avg >= 70) grade = "A";
-                        else if (avg >= 60) grade = "B";
-                        else if (avg >= 50) grade = "C";
-                        else if (avg >= 40) grade = "D";
+                        
+                        String examType = (meta != null && meta.containsKey("examType")) ? meta.get("examType").toString() : "CA";
 
                         Map<String, Object> markEntry = new HashMap<>();
-                        markEntry.put("subject", subjectName);
+                        markEntry.put("courseCode", subjectName); // The raw course code
                         markEntry.put("semester", semester);
-                        markEntry.put("marks", Double.parseDouble(new DecimalFormat("##.##").format(avg)));
-                        markEntry.put("grade", grade);
+                        markEntry.put("examType", examType);
+                        markEntry.put("marksList", validMarks);
+                        markEntry.put("total", Double.parseDouble(new DecimalFormat("##.##").format(total)));
+                        
+                        if ("CA".equalsIgnoreCase(examType) || "THEORY".equalsIgnoreCase(examType)) {
+                            markEntry.put("percentage", Double.parseDouble(new DecimalFormat("##.##").format(total))); // out of 100
+                        } else {
+                            double perc = (total / 80.0) * 100.0;
+                            markEntry.put("percentage", Double.parseDouble(new DecimalFormat("##.##").format(perc)));
+                        }
+
+                        // Try resolving the actual subject name so frontend display can use it
+                        String dept = (meta != null && meta.containsKey("departmentName")) ? meta.get("departmentName").toString() : "";
+                        String sem = (meta != null && meta.containsKey("year")) ? meta.get("year").toString() : "";
+                        String resolvedName = subjectName;
+                        if (!dept.isEmpty() && !sem.isEmpty()) {
+                            var entryOpt = subjectCatalogService.findByCourseCode(dept, sem, subjectName);
+                            if (entryOpt.isPresent()) {
+                                resolvedName = entryOpt.get().getCourseName();
+                            }
+                        }
+                        markEntry.put("subject", resolvedName);
+                        markEntry.put("savedAt", meta != null ? meta.get("savedAt") : null);
+
                         studentMarksList.add(markEntry);
                     }
                 } catch (Exception ignored) {
                 }
             }
+            studentMarksList.sort(Comparator
+                    .comparingInt((Map<String, Object> entry) -> parseSemesterValue(entry.get("semester")))
+                    .thenComparing(entry -> String.valueOf(entry.getOrDefault("subject", "")))
+                    .thenComparing(entry -> String.valueOf(entry.getOrDefault("examType", ""))));
             return ResponseEntity.ok(studentMarksList);
         } catch (Exception e) {
             e.printStackTrace();
@@ -232,7 +258,6 @@ public class StudentDashboardController {
     @GetMapping("/attendance")
     public ResponseEntity<?> getStudentAttendance(@RequestParam String email) {
         try {
-            // subject -> latest attendance map (keeps most recent block per subject)
             Map<String, Map<String, Object>> latestPerSubject = new LinkedHashMap<>();
 
             List<Block> attBlocks = blockchainService.getAttendanceBlocks();
@@ -247,9 +272,26 @@ public class StudentDashboardController {
 
                     if (students == null) continue;
 
-                    String subjectName = (meta != null && meta.containsKey("subjectName"))
+                    String courseCode = (meta != null && meta.containsKey("subjectName"))
                             ? (String) meta.get("subjectName")
                             : "Unknown Subject";
+                    String semester = (meta != null && meta.containsKey("year"))
+                            ? meta.get("year").toString()
+                            : "--";
+                    String savedAt = (meta != null && meta.containsKey("savedAt"))
+                            ? String.valueOf(meta.get("savedAt"))
+                            : "";
+                             
+                    String dept = (meta != null && meta.containsKey("departmentName")) ? meta.get("departmentName").toString() : "";
+                    String sem = (meta != null && meta.containsKey("year")) ? meta.get("year").toString() : "";
+                    String subjectName = courseCode;
+                    
+                    if (!dept.isEmpty() && !sem.isEmpty() && !courseCode.equals("Unknown Subject")) {
+                        var entryOpt = subjectCatalogService.findByCourseCode(dept, sem, courseCode);
+                        if (entryOpt.isPresent()) {
+                            subjectName = entryOpt.get().getCourseName();
+                        }
+                    }
 
                     for (Map<String, Object> st : students) {
                         // BUG FIX: match ONLY by email — name fallback caused wrong data
@@ -273,18 +315,27 @@ public class StudentDashboardController {
 
                         Map<String, Object> attEntry = new HashMap<>();
                         attEntry.put("subject", subjectName);
+                        attEntry.put("courseCode", courseCode);
+                        attEntry.put("semester", semester);
                         attEntry.put("totalClasses", totalClasses);
                         attEntry.put("present", present);
                         attEntry.put("percentage",
                                 Double.parseDouble(new DecimalFormat("##.##").format(perc)));
+                        attEntry.put("savedAt", savedAt);
 
-                        // BUG FIX 3: overwrite with latest block's data for this subject
-                        latestPerSubject.put(subjectName, attEntry);
+                        String entryKey = semester + "::" + courseCode;
+                        latestPerSubject.put(entryKey, attEntry);
                     }
                 } catch (Exception ignored) {}
             }
 
-            return ResponseEntity.ok(new ArrayList<>(latestPerSubject.values()));
+            List<Map<String, Object>> sortedAttendance = latestPerSubject.values().stream()
+                    .sorted(Comparator
+                            .comparingInt((Map<String, Object> entry) -> parseSemesterValue(entry.get("semester")))
+                            .thenComparing(entry -> String.valueOf(entry.getOrDefault("subject", ""))))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(sortedAttendance);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
@@ -476,6 +527,17 @@ public class StudentDashboardController {
             e.printStackTrace();
             return ResponseEntity.status(500)
                     .body(Map.of("status", "error", "message", "Upload failed: " + e.getMessage()));
+        }
+    }
+
+    private int parseSemesterValue(Object semesterValue) {
+        if (semesterValue == null) {
+            return Integer.MAX_VALUE;
+        }
+        try {
+            return Integer.parseInt(semesterValue.toString().trim());
+        } catch (NumberFormatException ignored) {
+            return Integer.MAX_VALUE;
         }
     }
 }
