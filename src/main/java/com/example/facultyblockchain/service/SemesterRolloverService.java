@@ -39,6 +39,12 @@ public class SemesterRolloverService {
     @Autowired
     private StudentExcelService studentExcelService;
 
+    @Autowired
+    private CourseOfferingService courseOfferingService;
+
+    @Autowired
+    private MentorAssignmentService mentorAssignmentService;
+
     public RolloverResult performRollover(String passingYear) {
         String normalizedPassingYear = passingYear == null ? "" : passingYear.trim();
         if (normalizedPassingYear.isEmpty()) {
@@ -88,11 +94,15 @@ public class SemesterRolloverService {
 
             List<StudentExcelModel> removedStudents =
                     studentExcelService.removeStudentsForArchive(normalizedPassingYear, "8");
+            int archivedCourseOfferings = courseOfferingService.archiveSemesterOfferings("8");
+            int archivedMentorAssignments = mentorAssignmentService.archiveAssignmentsForPassingYear(normalizedPassingYear);
 
             log.append("Archived marks blocks: ").append(marksSplit.archivedSnapshots.size()).append('\n');
             log.append("Archived attendance blocks: ").append(attendanceSplit.archivedSnapshots.size()).append('\n');
             log.append("Archived MAR blocks: ").append(marSplit.archivedSnapshots.size()).append('\n');
             log.append("Archived MOOCs blocks: ").append(moocsSplit.archivedSnapshots.size()).append('\n');
+            log.append("Archived semester-8 course offerings: ").append(archivedCourseOfferings).append('\n');
+            log.append("Archived mentor assignments for passing year: ").append(archivedMentorAssignments).append('\n');
             log.append("Removed from active student registry: ").append(removedStudents.size()).append('\n');
             log.append("Archive complete for passing year ").append(normalizedPassingYear);
 

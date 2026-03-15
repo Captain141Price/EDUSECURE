@@ -330,9 +330,19 @@
 
         document.getElementById("welcomeName").textContent = studentName || "Student";
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = "login.html";
+        async function logout() {
+            try {
+                if (email) {
+                    await fetch(window.location.origin + `/auth/logout?email=${encodeURIComponent(email)}`, {
+                        method: 'POST'
+                    });
+                }
+            } catch (err) {
+                console.error('Logout request failed', err);
+            } finally {
+                localStorage.clear();
+                window.location.href = "login.html";
+            }
         }
 
         // LOAD DATA

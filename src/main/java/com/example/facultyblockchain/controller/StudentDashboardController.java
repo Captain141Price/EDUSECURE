@@ -422,17 +422,37 @@ public class StudentDashboardController {
         try {
             List<Map<String, Object>> moocsList = new ArrayList<>();
             List<Block> blocks = blockchainService.getMoocsBlocks();
+            Map<String, String> reviewStatuses = new HashMap<>();
+
             for (Block b : blocks) {
-                if (email.equalsIgnoreCase(b.getEmail()) && b.getProjects() != null && !b.getProjects().isEmpty()) {
-                    try {
-                        Map<String, Object> data = objectMapper.readValue(b.getProjects(),
-                                new TypeReference<Map<String, Object>>() {
-                                });
+                if (b.getProjects() == null || b.getProjects().isEmpty()) {
+                    continue;
+                }
+                try {
+                    Map<String, Object> data = objectMapper.readValue(b.getProjects(),
+                            new TypeReference<Map<String, Object>>() {
+                            });
+
+                    if ("MENTOR_REVIEW".equals(data.get("action"))) {
+                        String originalHash = (String) data.get("originalHash");
+                        String status = (String) data.get("status");
+                        if (originalHash != null && status != null) {
+                            reviewStatuses.put(originalHash, status);
+                        }
+                        continue;
+                    }
+
+                    if (email.equalsIgnoreCase(b.getEmail())) {
                         data.put("hash", b.getHash());
                         moocsList.add(data);
-                    } catch (Exception ignored) {
                     }
+                } catch (Exception ignored) {
                 }
+            }
+
+            for (Map<String, Object> item : moocsList) {
+                String hash = (String) item.get("hash");
+                item.put("status", reviewStatuses.getOrDefault(hash, "PENDING"));
             }
             return ResponseEntity.ok(moocsList);
         } catch (Exception e) {

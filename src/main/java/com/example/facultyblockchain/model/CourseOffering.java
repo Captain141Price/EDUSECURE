@@ -4,6 +4,7 @@ public class CourseOffering {
     private String courseId;       // = courseCode from subjects.xlsx (e.g. PEC-CS801B)
     private String courseName;     // Subject display name
     private String subjectType;    // THEORY / PRACTICAL / SESSIONAL
+    private String teacherId;      // Permanent faculty master identifier
     private String teacherEmail;   // Reference to the teacher
     private String department;
     private String semester;
@@ -22,6 +23,7 @@ public class CourseOffering {
         this.courseId    = courseId;
         this.courseName  = courseName;
         this.subjectType = subjectType;
+        this.teacherId   = "";
         this.teacherEmail= teacherEmail;
         this.department  = department;
         this.semester    = semester;
@@ -37,11 +39,24 @@ public class CourseOffering {
         this.courseId    = courseId;
         this.courseName  = courseName;
         this.subjectType = subjectType;
+        this.teacherId   = "";
         this.teacherEmail= teacherEmail;
         this.department  = department;
         this.semester    = semester;
         this.courseCode  = (courseCode != null && !courseCode.isBlank())
                            ? courseCode : courseId;
+    }
+
+    public CourseOffering(String courseId, String courseName, String subjectType,
+            String teacherId, String teacherEmail, String department, String semester, String courseCode) {
+        this.courseId = courseId;
+        this.courseName = courseName;
+        this.subjectType = subjectType;
+        this.teacherId = teacherId;
+        this.teacherEmail = teacherEmail;
+        this.department = department;
+        this.semester = semester;
+        this.courseCode = (courseCode != null && !courseCode.isBlank()) ? courseCode : courseId;
     }
 
     // Getters and Setters
@@ -59,6 +74,9 @@ public class CourseOffering {
 
     public String getSubjectType() { return subjectType; }
     public void   setSubjectType(String subjectType) { this.subjectType = subjectType; }
+
+    public String getTeacherId() { return teacherId; }
+    public void   setTeacherId(String teacherId) { this.teacherId = teacherId; }
 
     public String getTeacherEmail() { return teacherEmail; }
     public void   setTeacherEmail(String teacherEmail) { this.teacherEmail = teacherEmail; }

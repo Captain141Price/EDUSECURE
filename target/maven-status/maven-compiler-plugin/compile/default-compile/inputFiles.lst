@@ -19,14 +19,17 @@ C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\StudentDashboardController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\ArchiveBlockchainService.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\StudentController.java
+C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\TeacherMasterController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\MoocsController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\StudentExcelService.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\MarController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\WelcomeController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\model\CourseOffering.java
+C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\TeacherMasterService.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\EmailService.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\model\SubjectEntry.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\LoginBlockchainService.java
+C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\model\TeacherMasterRecord.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\FacultyBlockchainApplication.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\controller\MentorController.java
 C:\Users\sahas\Desktop\Related to Project\Blockchain Final Year Project\src\main\java\com\example\facultyblockchain\service\DataSeeder.java

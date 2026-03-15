@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 public class MentorAssignmentService {
 
     private static final String MENTOR_ASSIGNMENT_FILE = System.getProperty("user.dir") + "/MentorAssignment.dat";
+    private static final String ARCHIVE_MENTOR_ASSIGNMENT_FILE = System.getProperty("user.dir") + "/archive_mentor_assignments.dat";
     private static final String SEPARATOR = "\\|";
 
     /**
@@ -118,5 +119,29 @@ public class MentorAssignmentService {
             result.put(email, getMentorAssignment(email));
         }
         return result;
+    }
+
+    public synchronized int archiveAssignmentsForPassingYear(String passingYear) throws IOException {
+        List<String> archivedLines = new ArrayList<>();
+        Iterator<Map.Entry<String, String>> iterator = assignments.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            String[] parts = entry.getValue().split(SEPARATOR);
+            if (parts.length >= 2 && passingYear.equals(parts[1])) {
+                archivedLines.add(entry.getKey() + "|" + entry.getValue());
+                iterator.remove();
+            }
+        }
+
+        saveAssignments();
+        if (!archivedLines.isEmpty()) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(ARCHIVE_MENTOR_ASSIGNMENT_FILE, true))) {
+                for (String line : archivedLines) {
+                    bw.write(line);
+                    bw.newLine();
+                }
+            }
+        }
+        return archivedLines.size();
     }
 }

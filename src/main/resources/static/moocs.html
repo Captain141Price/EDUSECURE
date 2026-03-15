@@ -136,6 +136,19 @@
         thead th { background: var(--secondary-bg); color: var(--primary-hover); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         tbody tr:hover { background: #f8fafc; }
 
+        .status-badge {
+            padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+            display: inline-block;
+        }
+        .status-pending { background: #fef3c7; color: #b45309; }
+        .status-approved { background: #d1fae5; color: #047857; }
+        .status-rejected { background: #fee2e2; color: #b91c1c; }
+
+        .btn { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; color: white; margin-right: 5px; transition: 0.2s; }
+        .btn-approve { background: var(--success); }
+        .btn-approve:hover { background: #059669; }
+        .btn-reject { background: var(--danger); }
+        .btn-reject:hover { background: #dc2626; }
         .btn-view { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; color: white; margin-right: 5px; background: var(--primary); text-decoration: none; display: inline-block; transition: 0.2s; }
         .btn-view:hover { background: var(--primary-hover); }
         
@@ -175,7 +188,7 @@
         Mentor MOOCs Dashboard
         <span id="mentorBadge" class="mentor-badge" style="display: none;">Assigned to: <span id="mentorDeptSem"></span></span>
     </div>
-    <div style="margin-bottom: 20px; color: var(--muted); font-size: 14px;">View only access. MOOCs do not require Mentor approval.</div>
+    <div style="margin-bottom: 20px; color: var(--muted); font-size: 14px;">Review assigned student MOOCs submissions and record approval directly on the blockchain.</div>
 
     <div id="errorMsg"></div>
 
@@ -190,7 +203,8 @@
                     <th>Date</th>
                     <th>Credits</th>
                     <th>Certificate</th>
-                    <th>Tx Hash</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="moocsTbody">
@@ -265,17 +279,30 @@
                 const tr = document.createElement('tr');
                 
                 let proofHtml = sub.filePath ? `<a href="${window.location.origin}/uploads/${sub.filePath}" target="_blank" class="btn-view">View Cert</a>` : '--';
-                const hashDisplay = sub.hash ? sub.hash.substring(0, 8) + '...' : '--';
+                let statusClass = 'status-pending';
+                if (sub.status === 'APPROVED') statusClass = 'status-approved';
+                if (sub.status === 'REJECTED') statusClass = 'status-rejected';
+
+                let actionsHtml = '';
+                if (sub.status === 'PENDING') {
+                    actionsHtml = `
+                        <button class="btn btn-approve" onclick="reviewSubmission('${sub.hash}', 'APPROVED')">Approve</button>
+                        <button class="btn btn-reject" onclick="reviewSubmission('${sub.hash}', 'REJECTED')">Reject</button>
+                    `;
+                } else {
+                    actionsHtml = `<span style="color:var(--muted);font-size:12px;">Reviewed</span>`;
+                }
 
                 tr.innerHTML = `
-                    <td style="font-weight:600;">${escapeHtml(sub.studentEmail)}</td>
+                    <td style="font-weight:600;">${escapeHtml(sub.studentName || sub.studentEmail)}</td>
                     <td>${escapeHtml(sub.roll || '--')}</td>
                     <td>${escapeHtml(sub.name || 'Unnamed Course')}</td>
                     <td>${escapeHtml(sub.platform || '--')}</td>
                     <td>${escapeHtml(sub.date || '--')}</td>
                     <td style="font-weight:bold; color:var(--primary);">${escapeHtml(sub.credits || '0')}</td>
                     <td>${proofHtml}</td>
-                    <td><span class="hash-tag" title="${escapeHtml(sub.hash)}">${hashDisplay}</span></td>
+                    <td><span class="status-badge ${statusClass}">${escapeHtml(sub.status || 'PENDING')}</span></td>
+                    <td>${actionsHtml}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -291,6 +318,27 @@
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
+    }
+
+    async function reviewSubmission(hash, status) {
+        if (!confirm(`Are you sure you want to mark this MOOCs submission as ${status}?`)) return;
+
+        try {
+            let res = await fetch(`${apiBase}/moocs/review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mentorEmail: teacherEmail, originalHash: hash, status: status })
+            });
+            if (res.ok) {
+                loadSubmissions();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert(data.message || "Failed to record review.");
+            }
+        } catch (e) {
+            alert("Network error.");
+            console.error(e);
+        }
     }
 
     initDashboard();

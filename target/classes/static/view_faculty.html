@@ -85,6 +85,10 @@
           <!-- GENERAL -->
           <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
             <div class="mb-3">
+              <div class="section-title">Teacher ID</div>
+              <input id="teacherId" type="text" class="form-control" disabled />
+            </div>
+            <div class="mb-3">
               <div class="section-title">Name</div>
               <input id="name" type="text" class="form-control" disabled />
             </div>
@@ -128,6 +132,10 @@
           <div class="tab-pane fade" id="tab-research" role="tabpanel">
             <div class="text-center">
               <h5 class="section-title mb-3">Research Publications</h5>
+              <div class="mb-3">
+                <div class="section-title">Research Details</div>
+                <textarea id="researchDetails" class="form-control" rows="4" disabled></textarea>
+              </div>
               <div id="bibOutput" class="bib-output text-start"></div>
             </div>
           </div>
@@ -217,15 +225,17 @@
 
     function renderFaculty(data) {
       document.getElementById('name').value = data.name || '';
+      document.getElementById('teacherId').value = data.teacherId || '';
       document.getElementById('email').value = data.email || '';
       document.getElementById('department').value = data.department || '';
       document.getElementById('specialization').value = data.specialization || '';
-      document.getElementById('teachingExp').value = data.teachingExp || data.teaching || '';
+      document.getElementById('teachingExp').value = data.teachingExperience || data.teachingExp || data.teaching || '';
       document.getElementById('qualifications').value = data.qualifications || '';
       document.getElementById('dateOfJoining').value = data.dateOfJoining || data.joiningDate || '';
       document.getElementById('dateOfAssign').value = data.dateOfAssign || '';
-      document.getElementById('professionalActivity').value = data.professionalActivity || '';
-      document.getElementById('facultyParticipation').value = data.facultyParticipation || '';
+      document.getElementById('researchDetails').value = data.researchDetails || data.research || '';
+      document.getElementById('professionalActivity').value = data.professionalActivities || data.professionalActivity || '';
+      document.getElementById('facultyParticipation').value = data.participation || data.facultyParticipation || '';
       document.getElementById('projects').value = data.projects || '';
 
       const bibOutput = document.getElementById('bibOutput');
@@ -249,8 +259,8 @@
     }
 
     function clearFields() {
-      ['name','email','department','specialization','teachingExp','qualifications',
-       'dateOfJoining','dateOfAssign','professionalActivity','facultyParticipation','projects']
+      ['teacherId','name','email','department','specialization','teachingExp','qualifications',
+       'dateOfJoining','dateOfAssign','researchDetails','professionalActivity','facultyParticipation','projects']
        .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
       document.getElementById('bibOutput').innerHTML = '';
     }
@@ -269,6 +279,7 @@
     function collectData() {
       const general = {
         name: document.getElementById('name').value || '',
+        teacherId: document.getElementById('teacherId').value || '',
         email: document.getElementById('email').value || '',
         department: document.getElementById('department').value || '',
         specialization: document.getElementById('specialization').value || '',
@@ -276,6 +287,7 @@
         qualifications: document.getElementById('qualifications').value || '',
         dateOfJoining: document.getElementById('dateOfJoining').value || '',
         dateOfAssign: document.getElementById('dateOfAssign').value || '',
+        researchDetails: document.getElementById('researchDetails').value || '',
         professionalActivity: document.getElementById('professionalActivity').value || '',
         participation: document.getElementById('facultyParticipation').value || '',
         projects: document.getElementById('projects').value || ''
@@ -295,6 +307,7 @@
       const rows = [
         ['Field','Value'],
         ['Name', general.name],
+        ['Teacher ID', general.teacherId],
         ['Email', general.email],
         ['Department', general.department],
         ['Specialization', general.specialization],
@@ -302,6 +315,7 @@
         ['Qualifications', general.qualifications],
         ['Date of Joining', general.dateOfJoining],
         ['Date of Assignment', general.dateOfAssign],
+        ['Research Details', general.researchDetails],
         ['Professional Activity', general.professionalActivity],
         ['Participation', general.participation],
         ['Projects', general.projects],
@@ -332,16 +346,18 @@
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
 
   // Proper display names
-  const fieldNames = {
-    name: "Name",
-    email: "Email",
-    department: "Department",
-    specialization: "Area of Specialization",
-    teachingExp: "Teaching Experience",
-    qualifications: "Qualifications",
-    dateOfJoining: "Date of Joining",
-    dateOfAssign: "Date of Assignment",
-    professionalActivity: "Professional Activity",
+    const fieldNames = {
+      name: "Name",
+      teacherId: "Teacher ID",
+      email: "Email",
+      department: "Department",
+      specialization: "Area of Specialization",
+      teachingExp: "Teaching Experience",
+      qualifications: "Qualifications",
+      dateOfJoining: "Date of Joining",
+      dateOfAssign: "Date of Assignment",
+      researchDetails: "Research Details",
+      professionalActivity: "Professional Activity",
     participation: "Faculty Participation",
     projects: "Projects"
   };

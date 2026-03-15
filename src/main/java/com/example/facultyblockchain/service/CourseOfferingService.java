@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import com.example.facultyblockchain.model.StudentExcelModel;
 
 @Service
@@ -13,14 +15,17 @@ public class CourseOfferingService {
 
     private static final String FILE_PATH = System.getProperty("user.dir") + "/CourseOffering.dat";
     private static final String ENROLLMENT_FILE_PATH = System.getProperty("user.dir") + "/CourseEnrollment.dat";
+    private static final String ARCHIVE_FILE_PATH = System.getProperty("user.dir") + "/archive_course_offerings.dat";
+    private static final String ARCHIVE_ENROLLMENT_FILE_PATH = System.getProperty("user.dir") + "/archive_course_enrollments.dat";
 
-    // Format: CourseID|CourseName|SubjectType|TeacherEmail|Department|Semester|CourseCode
+    // Format: CourseID|CourseName|SubjectType|TeacherID|TeacherEmail|Department|Semester|CourseCode
     public synchronized void allocateCourse(CourseOffering offering) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_PATH, true))) {
-            bw.write(String.format("%s|%s|%s|%s|%s|%s|%s\n",
+            bw.write(String.format("%s|%s|%s|%s|%s|%s|%s|%s\n",
                     offering.getCourseId(),
                     offering.getCourseName(),
                     offering.getSubjectType(),
+                    offering.getTeacherId(),
                     offering.getTeacherEmail(),
                     offering.getDepartment(),
                     offering.getSemester(),
@@ -39,11 +44,14 @@ public class CourseOfferingService {
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|");
                 if (parts.length >= 6) {
-                    // parts[6] = courseCode (new field); fall back to courseId for old records
-                    String courseCode = (parts.length >= 7) ? parts[6] : parts[0];
-                    offerings.add(new CourseOffering(
-                            parts[0], parts[1], parts[2], parts[3], parts[4], parts[5],
-                            courseCode));
+                    if (parts.length >= 8) {
+                        offerings.add(new CourseOffering(
+                                parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]));
+                    } else {
+                        String courseCode = (parts.length >= 7) ? parts[6] : parts[0];
+                        offerings.add(new CourseOffering(
+                                parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], courseCode));
+                    }
                 }
             }
         } catch (IOException e) {
@@ -123,5 +131,83 @@ public class CourseOfferingService {
             e.printStackTrace();
         }
         return students;
+    }
+
+    public synchronized int archiveSemesterOfferings(String semester) throws IOException {
+        File file = new File(FILE_PATH);
+        if (!file.exists()) {
+            return 0;
+        }
+
+        List<String> activeLines = new ArrayList<>();
+        List<String> archivedLines = new ArrayList<>();
+        Set<String> archivedCourseIds = new LinkedHashSet<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                String rowSemester = parts.length >= 7 ? parts[6] : (parts.length >= 6 ? parts[5] : "");
+                String courseId = parts.length > 0 ? parts[0] : "";
+                if (semester.equals(rowSemester)) {
+                    archivedLines.add(line);
+                    archivedCourseIds.add(courseId);
+                } else {
+                    activeLines.add(line);
+                }
+            }
+        }
+
+        rewriteFile(FILE_PATH, activeLines);
+        appendLines(ARCHIVE_FILE_PATH, archivedLines);
+        archiveEnrollments(archivedCourseIds);
+        return archivedLines.size();
+    }
+
+    private void archiveEnrollments(Set<String> archivedCourseIds) throws IOException {
+        File file = new File(ENROLLMENT_FILE_PATH);
+        if (!file.exists() || archivedCourseIds.isEmpty()) {
+            return;
+        }
+
+        List<String> activeLines = new ArrayList<>();
+        List<String> archivedLines = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                String courseId = parts.length > 0 ? parts[0] : "";
+                if (archivedCourseIds.contains(courseId)) {
+                    archivedLines.add(line);
+                } else {
+                    activeLines.add(line);
+                }
+            }
+        }
+
+        rewriteFile(ENROLLMENT_FILE_PATH, activeLines);
+        appendLines(ARCHIVE_ENROLLMENT_FILE_PATH, archivedLines);
+    }
+
+    private void rewriteFile(String path, List<String> lines) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, false))) {
+            for (String line : lines) {
+                bw.write(line);
+                bw.newLine();
+            }
+        }
+    }
+
+    private void appendLines(String path, List<String> lines) throws IOException {
+        if (lines.isEmpty()) {
+            return;
+        }
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
+            for (String line : lines) {
+                bw.write(line);
+                bw.newLine();
+            }
+        }
     }
 }

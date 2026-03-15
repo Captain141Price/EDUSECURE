@@ -4,6 +4,7 @@ import com.example.facultyblockchain.model.LoginBlock;
 import com.example.facultyblockchain.service.BlockchainService;
 import com.example.facultyblockchain.service.LoginBlockchainService;
 import com.example.facultyblockchain.service.StudentExcelService;
+import com.example.facultyblockchain.service.TeacherMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,9 @@ public class AuthBlockchainController {
 
     @Autowired
     private BlockchainService blockchainService;
+
+    @Autowired
+    private TeacherMasterService teacherMasterService;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -230,12 +234,10 @@ public class AuthBlockchainController {
     @PostMapping("/forgot-password/generate-otp")
     public ResponseEntity<Map<String, String>> generateOtp(@RequestParam String email) {
         try {
-            // BUG FIX 1: was checking only studentExcelService.emailExists()
-            // — teachers were always rejected. Now we search all 4 blockchains.
-            String role = loginBlockchainService.findRoleByEmail(email);
+            String role = resolvePasswordResetRole(email);
             if (role == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("status", "error", "message", "Email not registered."));
+                        .body(Map.of("status", "error", "message", "Email is not registered in the system."));
             }
 
             // Generate 6-digit OTP
@@ -361,7 +363,20 @@ public class AuthBlockchainController {
             // Get the stored name from the blockchain (works for all roles, not just Excel).
             String name = loginBlockchainService.getNameByEmail(email, role);
             if (name == null) {
-                // Fallback: use email prefix as name
+                if ("teacher".equalsIgnoreCase(role)) {
+                    name = teacherMasterService.findByEmail(email)
+                            .map(record -> record.getName())
+                            .filter(storedName -> storedName != null && !storedName.isBlank())
+                            .orElse(null);
+                } else if ("student".equalsIgnoreCase(role)) {
+                    name = studentExcelService.findByEmail(email)
+                            .map(student -> student.getName())
+                            .filter(storedName -> storedName != null && !storedName.isBlank())
+                            .orElse(null);
+                }
+            }
+
+            if (name == null) {
                 name = email.split("@")[0];
             }
 
@@ -382,5 +397,22 @@ public class AuthBlockchainController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("status", "error", "message", e.getMessage()));
         }
+    }
+
+    private String resolvePasswordResetRole(String email) {
+        String role = loginBlockchainService.findRoleByEmail(email);
+        if (role != null) {
+            return role;
+        }
+
+        if (teacherMasterService.findByEmail(email).isPresent()) {
+            return "teacher";
+        }
+
+        if (studentExcelService.findByEmail(email).isPresent()) {
+            return "student";
+        }
+
+        return null;
     }
 }

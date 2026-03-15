@@ -184,6 +184,18 @@
                 View / Edit Students
             </button>
 
+            <button id="allocateCourseBtn" class="add-btn" style="display:none; background:#009688;">
+                Allocate Course
+            </button>
+
+            <button id="uploadTeachersBtn" class="add-btn" style="display:none; background:#2563eb;">
+                Upload Teachers
+            </button>
+
+            <button id="exportProfilesBtn" class="add-btn" style="display:none; background:#16a34a;">
+                Export Faculty Profiles
+            </button>
+
             <button id="addActionBtn" class="add-btn" style="display:none;">
             </button>
 
@@ -194,6 +206,7 @@
     </div>
 
     <div id="teacherContainer"></div>
+    <input type="file" id="teachersExcelInput" accept=".xlsx,.xls" style="display:none;">
 
     <div id="otpModal" style="
         display:none;
@@ -222,9 +235,8 @@
             <div id="courseModalStep1">
                 <h3 style="margin-top:0; color:#1e293b;">Allocate Course to Faculty</h3>
                 <p style="font-size:13px; color:#64748b; margin-top:-8px; margin-bottom:14px;">
-                    Select department and semester for the subject, then choose the passing year for the student session.
+                    Select department, semester, subject, and teacher. Students are loaded using department and semester.
                 </p>
-                <input type="hidden" id="courseTeacherEmail">
 
                 <!-- Row 1: Department -->
                 <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Department</label>
@@ -255,15 +267,10 @@
                     <option value="8">8</option>
                 </select>
 
-                <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Passing Year (Session)</label>
-                <select id="coursePassingYear"
+                <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Teacher</label>
+                <select id="courseTeacherSelect"
                     style="width:100%; padding:9px 10px; margin-bottom:12px; border:1px solid #d1d5db; border-radius:7px; font-size:14px; background:#f9fafb; box-sizing:border-box;">
-                    <option value="">— Select Passing Year —</option>
-                    <script>
-                        for (let y = 2020; y <= 2040; y++) {
-                            document.write(`<option value="${y}">${y}</option>`);
-                        }
-                    </script>
+                    <option value="">— Select Teacher —</option>
                 </select>
 
                 <!-- Row 3: Subject Name (populated from subjects.xlsx) -->
@@ -403,28 +410,18 @@
         checkSession();
 
         const container = document.getElementById("teacherContainer");
+        let teacherMasterList = [];
 
         async function loadTeachers() {
             try {
-                const response = await fetch(`${apiBase}/all`);
-
-                // --- FIX 1: Use 'let' instead of 'const' so we can filter ---
+                const response = await fetch(`${apiBase}/faculty-master/all`);
                 let facultyList = await response.json();
-
-                // --- FIX 2: THE MAGIC FILTER (UPDATED) ---
-                // Removes Attendance, Marks, MAR, and MOOCs records from the UI list so they don't overwrite real names!
-                if (Array.isArray(facultyList)) {
-                    facultyList = facultyList.filter(block =>
-                        block.name !== "ATTENDANCE_RECORD" &&
-                        block.name !== "MARKS_RECORD" &&
-                        block.name !== "MAR_RECORD" &&
-                        block.name !== "MOOCS_RECORD"
-                    );
-                }
-                // -------------------------------------------------------------
 
                 // show add faculty button for SuperAdmin, add student button for Admin
                 const addBtn = document.getElementById("addActionBtn");
+                const allocateBtn = document.getElementById("allocateCourseBtn");
+                const uploadBtn = document.getElementById("uploadTeachersBtn");
+                const exportBtn = document.getElementById("exportProfilesBtn");
 
                 // show view or edit student button for Admin
                 const veBtn = document.getElementById("viewedit");
@@ -439,6 +436,12 @@
                         addBtn.innerText = "Add Faculty +";
                         addBtn.onclick = goToAddFaculty;
                         addBtn.style.display = "block";
+                        allocateBtn.style.display = "inline-block";
+                        allocateBtn.onclick = () => openCourseModal();
+                        uploadBtn.style.display = "inline-block";
+                        uploadBtn.onclick = openTeachersExcelUpload;
+                        exportBtn.style.display = "inline-block";
+                        exportBtn.onclick = exportFacultyProfiles;
                         document.getElementById('timelineBtn')?.remove();
                         document.getElementById('archiveBtn')?.remove();
                         document.getElementById('resetBtn')?.remove();
@@ -477,50 +480,24 @@
                         addBtn.onclick = goToAddStudent;
                         addBtn.style.display = "block";
                         veBtn.style.display = "block";
+                        allocateBtn.style.display = "inline-block";
+                        allocateBtn.onclick = () => openCourseModal();
+                        uploadBtn.style.display = "inline-block";
+                        uploadBtn.onclick = openTeachersExcelUpload;
+                        exportBtn.style.display = "inline-block";
+                        exportBtn.onclick = exportFacultyProfiles;
                     }
                 }
 
                 // If API returned error-like object or not an array
                 if (!Array.isArray(facultyList)) {
-                    console.error("Unexpected /all response:", facultyList);
+                    console.error("Unexpected /faculty-master/all response:", facultyList);
                     container.innerHTML = "<p>Error loading data. Check console for details.</p>";
                     return;
                 }
-
-                // Deduplicate by email: keep the latest block per email (prefer higher timestamp)
-                const map = {}; // emailLower -> block
-                facultyList.forEach(block => {
-                    if (!block || !block.email) return;
-                    const key = String(block.email).toLowerCase();
-                    const existing = map[key];
-
-                    const bTs = (block.timestamp !== undefined && block.timestamp !== null)
-                        ? Number(block.timestamp)
-                        : null;
-                    const eTs = (existing && existing.timestamp !== undefined && existing.timestamp !== null)
-                        ? Number(existing.timestamp)
-                        : null;
-
-                    if (!existing) {
-                        // first occurrence
-                        map[key] = block;
-                    } else if (bTs != null && eTs != null) {
-                        // both have timestamps -> pick larger (more recent)
-                        if (bTs > eTs) map[key] = block;
-                    } else if (bTs != null && eTs == null) {
-                        // new has timestamp, existing doesn't -> prefer new
-                        map[key] = block;
-                    } else if (bTs == null && eTs != null) {
-                        // keep existing (it has timestamp)
-                        // nothing
-                    } else {
-                        // neither has timestamp -> prefer the later occurrence (override)
-                        map[key] = block;
-                    }
-                });
-
-                // Convert map to array of unique latest faculty records
-                let dedupedList = Object.values(map);
+                teacherMasterList = facultyList.slice();
+                loadCourseTeacherOptions();
+                let dedupedList = facultyList.slice();
 
                 // Filter data based on role (do this after dedupe)
                 if (role && role.toLowerCase() === "teacher" && email) {
@@ -561,11 +538,12 @@
                     const name = faculty.name || "Unnamed";
                     const dept = faculty.department || "—";
                     const mail = faculty.email || "—";
+                    const teacherId = faculty.teacherId || "—";
 
                     card.innerHTML = `
                         <div class="header">${escapeHtml(name)}</div>
                         <div class="details">
-                            Email: ${escapeHtml(mail)} | Department: ${escapeHtml(dept)}
+                            Teacher ID: ${escapeHtml(teacherId)} | Email: ${escapeHtml(mail)} | Department: ${escapeHtml(dept)}
                         </div>
                         <div style="margin-top:10px;">
                             <button class="view-btn" onclick="viewFaculty('${encodeURIComponent(mail)}')">VIEW</button>
@@ -593,7 +571,7 @@
                             let courseHtml = '<div style="padding: 10px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #007bff;">';
                             courseHtml += '<strong style="color: #333; font-size: 14px;">Allocated Courses:</strong><ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 14px; color: #555;">';
                             teacherCourses.forEach(c => {
-                                courseHtml += `<li>${escapeHtml(c.courseId)} - ${escapeHtml(c.courseName)} (${escapeHtml(c.subjectType)}) - Sem ${escapeHtml(c.semester)}</li>`;
+                                courseHtml += `<li>${escapeHtml(c.courseCode || c.courseId)} - ${escapeHtml(c.courseName)} (${escapeHtml(c.subjectType)}) - Sem ${escapeHtml(c.semester)}</li>`;
                             });
                             courseHtml += '</ul></div>';
                             adminPanelHtml += courseHtml;
@@ -764,6 +742,40 @@
             }
         }
 
+        function openTeachersExcelUpload() {
+            const input = document.getElementById('teachersExcelInput');
+            input.value = '';
+            input.click();
+        }
+
+        async function uploadTeachersExcel(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`${apiBase}/faculty-master/upload-excel`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Failed to import teachers.xlsx');
+                }
+                alert(data.message || 'Teacher records imported successfully.');
+                await loadTeachers();
+            } catch (err) {
+                console.error(err);
+                alert("Error importing teachers.xlsx: " + err.message);
+            }
+        }
+
+        function exportFacultyProfiles() {
+            window.location.href = `${apiBase}/faculty-master/export`;
+        }
+
         async function resetAllData() {
             const warn1 = confirm(
                 "⚠️ WARNING\n\n" +
@@ -827,10 +839,25 @@
         let selectedSubjectEntry = null;
         /** Students loaded for Step 2 */
         let tempStudentsList = [];
+        let preselectedTeacherEmail = "";
 
-        function openCourseModal(encodedEmail) {
-            const e = decodeURIComponent(encodedEmail);
-            document.getElementById('courseTeacherEmail').value = e;
+        function loadCourseTeacherOptions(selectedEmail = "") {
+            const select = document.getElementById('courseTeacherSelect');
+            if (!select) return;
+            select.innerHTML = '<option value="">— Select Teacher —</option>';
+            teacherMasterList.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher.email || '';
+                option.textContent = `${teacher.name || 'Unnamed'} (${teacher.teacherId || 'No ID'})`;
+                option.dataset.teacherId = teacher.teacherId || '';
+                option.selected = !!selectedEmail && option.value.toLowerCase() === selectedEmail.toLowerCase();
+                select.appendChild(option);
+            });
+        }
+
+        function openCourseModal(encodedEmail = "") {
+            preselectedTeacherEmail = encodedEmail ? decodeURIComponent(encodedEmail) : "";
+            loadCourseTeacherOptions(preselectedTeacherEmail);
             document.getElementById('courseModal').style.display = 'flex';
         }
 
@@ -842,7 +869,7 @@
         function resetCourseModal() {
             document.getElementById('courseDept').value = '';
             document.getElementById('courseSem').value  = '';
-            document.getElementById('coursePassingYear').value = '';
+            loadCourseTeacherOptions(preselectedTeacherEmail);
             resetSubjectDropdown('— Select Dept & Semester first —');
             document.getElementById('courseId').value   = '';
             document.getElementById('courseName').value = '';
@@ -967,19 +994,19 @@
         async function goToStep2() {
             const department = document.getElementById('courseDept').value;
             const semester   = document.getElementById('courseSem').value;
-            const passingYear = document.getElementById('coursePassingYear').value;
+            const teacherEmail = document.getElementById('courseTeacherSelect').value;
             const courseId   = document.getElementById('courseId').value.trim();
             const courseName = document.getElementById('courseName').value.trim();
 
-            if (!department || !semester || !passingYear || !courseId || !courseName) {
-                alert("Please select department, semester, passing year, and subject first.");
+            if (!department || !semester || !teacherEmail || !courseId || !courseName) {
+                alert("Please select department, semester, subject, and teacher first.");
                 return;
             }
 
             try {
                 const res = await fetch(
                     window.location.origin +
-                    `/course/students?department=${encodeURIComponent(department)}&passingYear=${encodeURIComponent(passingYear)}`
+                    `/course/students?department=${encodeURIComponent(department)}&semester=${encodeURIComponent(semester)}`
                 );
                 if (!res.ok) throw new Error("Failed to load students for this class.");
                 tempStudentsList = await res.json();
@@ -990,7 +1017,7 @@
                 const isElective = selectedSubjectEntry && selectedSubjectEntry.elective;
                 document.getElementById('enrollmentSummaryBar').innerHTML =
                     `<strong>${escapeHtml(courseName)}</strong> &nbsp;|&nbsp; Code: <code>${escapeHtml(courseId)}</code>` +
-                    `&nbsp;|&nbsp; Dept: ${escapeHtml(department)} &nbsp;|&nbsp; Passing Year: ${escapeHtml(passingYear)} &nbsp;|&nbsp; Sem: ${escapeHtml(semester)}` +
+                    `&nbsp;|&nbsp; Dept: ${escapeHtml(department)} &nbsp;|&nbsp; Sem: ${escapeHtml(semester)} &nbsp;|&nbsp; Teacher: ${escapeHtml(document.getElementById('courseTeacherSelect').selectedOptions[0]?.textContent || teacherEmail)}` +
                     (isElective ? ' &nbsp;<span style="background:#fbbf24;color:#1c1917;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">ELECTIVE</span>' : '');
 
                 document.getElementById('courseModalStep1').style.display = 'none';
@@ -1007,7 +1034,7 @@
 
             if (!tempStudentsList || tempStudentsList.length === 0) {
                 container.innerHTML =
-                    '<p style="color:#64748b;font-size:14px;text-align:center;padding:20px 0;">No students found for this department and passing year.</p>';
+                    '<p style="color:#64748b;font-size:14px;text-align:center;padding:20px 0;">No students found for this department and semester.</p>';
                 return;
             }
 
@@ -1054,7 +1081,9 @@
         }
 
         async function submitCourseAllocationAndEnrollment() {
-            const teacherEmail = document.getElementById('courseTeacherEmail').value;
+            const teacherSelect = document.getElementById('courseTeacherSelect');
+            const teacherEmail = teacherSelect.value;
+            const teacherId = teacherSelect.selectedOptions[0]?.dataset.teacherId || "";
             const department   = document.getElementById('courseDept').value;
             const semester     = document.getElementById('courseSem').value;
             const courseCode   = document.getElementById('courseId').value.trim();   // the real code e.g. PEC-CS801B
@@ -1076,7 +1105,7 @@
 
             // courseId = courseCode for storage consistency
             const payload1 = {
-                teacherEmail, department, semester,
+                teacherId, teacherEmail, department, semester,
                 courseId:   courseCode,  // used as the offering key
                 courseCode: courseCode,  // explicit code field
                 courseName,
@@ -1164,6 +1193,7 @@
             }
         }
 
+        document.getElementById('teachersExcelInput').addEventListener('change', uploadTeachersExcel);
         loadTeachers();
     </script>
 
@@ -1191,6 +1221,7 @@
       <ul style="color:#166534;font-size:13px;line-height:1.8;padding-left:18px;">
         <li>Students with the selected passing year and semester 8 will be archived</li>
         <li>Their marks, attendance, MAR and MOOCs records will move to archive blockchain files</li>
+        <li>Semester 8 course allocations and matching mentor assignments will also be archived</li>
         <li>Archived students will disappear from active student dashboards</li>
         <li>SuperAdmin history search will still show both active and archived records</li>
       </ul>
@@ -1256,6 +1287,7 @@ async function confirmArchive() {
     'You are about to archive semester-8 students for passing year ' + passingYear + '.\n\n' +
     'This will:\n' +
     '  • Move their profile, marks, attendance, MAR and MOOCs data into archive blockchain files\n' +
+    '  • Archive semester 8 course allocations and mentor assignments for the session\n' +
     '  • Remove them from the active student registry\n\n' +
     'This cannot be undone. Continue?'
   );

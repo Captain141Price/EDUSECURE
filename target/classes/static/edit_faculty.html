@@ -114,6 +114,9 @@
     <div class="card overflow-hidden">
       <header class="page-header">
         <h2>Edit Faculty Details</h2>
+        <div style="margin-top: 10px;">
+          <button class="btn btn-light btn-sm" type="button" onclick="goToMyCourses()">My Courses</button>
+        </div>
       </header>
 
       <div class="p-4">
@@ -130,9 +133,27 @@
           <div class="tab-pane fade show active" id="tab-general">
             <div class="row g-3">
               <div class="col-md-6">
+                <div class="section-title">Teacher ID</div>
+                <input id="teacherIdField" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <div class="section-title">Name</div>
+                <input id="nameField" class="form-control" />
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
                 <div class="section-title">Email (Read-only)</div>
                 <input id="emailField" class="form-control" readonly />
               </div>
+              <div class="col-md-6">
+                <div class="section-title">Department</div>
+                <input id="departmentField" class="form-control" />
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
               <div class="col-md-6">
                 <div class="section-title">Teaching Experience</div>
                 <input id="teachingExp" class="form-control" />
@@ -165,6 +186,10 @@
           <div class="tab-pane fade" id="tab-research">
             <div class="text-center">
               <h5 class="section-title mb-3">Research Publications</h5>
+              <div class="mb-3 text-start">
+                <div class="section-title">Research Details</div>
+                <textarea id="researchDetails" class="form-control" rows="3" placeholder="Research interests, domains, grants, labs, or other details"></textarea>
+              </div>
               <div class="bibtex-container mx-auto" style="max-width:800px;">
                 <p>Paste your BibTeX entries and click Convert:</p>
                 <textarea id="bibInput" class="form-control" placeholder="Paste BibTeX entries here..." rows="6"></textarea>
@@ -204,10 +229,27 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+  <div id="otpModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); justify-content:center; align-items:center; z-index:1200;">
+    <div style="background:white; border-radius:12px; width:320px; padding:22px; text-align:center;">
+      <h4 style="margin-top:0;">OTP Verification</h4>
+      <p id="otpEmailText" style="font-size:14px; color:#555;"></p>
+      <input type="text" id="otpInput" placeholder="Enter OTP" class="form-control" style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:center; gap:10px;">
+        <button class="btn btn-primary" onclick="verifyEnteredOtp()">Verify</button>
+        <button class="btn btn-secondary" onclick="closeOtpModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
  <script>
   const apiBase = window.location.origin + "/api";
   const params = new URLSearchParams(window.location.search);
   const email = params.get("email");
+  let pendingSaveAction = null;
+
+  function goToMyCourses() {
+    window.location.href = "teacher_dashboard.html";
+  }
 
   // Load Faculty Data
   document.addEventListener("DOMContentLoaded", async () => {
@@ -231,13 +273,19 @@
         return;
       }
 
-      // fill form fields dynamically
-      for (const key in data) {
-        if (document.getElementById(key)) {
-          // avoid putting non-string values into inputs
-          document.getElementById(key).value = data[key] == null ? "" : String(data[key]);
-        }
-      }
+      document.getElementById("teacherIdField").value = data.teacherId || "";
+      document.getElementById("nameField").value = data.name || "";
+      document.getElementById("emailField").value = data.email || "";
+      document.getElementById("departmentField").value = data.department || "";
+      document.getElementById("teachingExp").value = data.teachingExperience || data.teachingExp || "";
+      document.getElementById("specialization").value = data.specialization || "";
+      document.getElementById("qualifications").value = data.qualifications || "";
+      document.getElementById("dateOfJoining").value = data.dateOfJoining || "";
+      document.getElementById("dateOfAssign").value = data.dateOfAssign || "";
+      document.getElementById("researchDetails").value = data.researchDetails || data.research || "";
+      document.getElementById("professionalActivity").value = data.professionalActivities || data.professionalActivity || "";
+      document.getElementById("facultyParticipation").value = data.participation || data.facultyParticipation || "";
+      document.getElementById("projects").value = data.projects || "";
 
       // restore raw BibTeX if present
       if (data.rawBibtex) {
@@ -271,60 +319,59 @@
   // Saving Updates
   async function saveUpdates() {
     try {
-      // Ensure the formatted output matches current textarea contents
-      convertBibtex();
+      pendingSaveAction = finalizeSaveUpdates;
+      await sendOtpForSave();
+    } catch (err) {
+      console.error(err);
+      alert("Error communicating with backend.");
+    }
+  }
 
-      const formData = new FormData();
-      formData.append("email", email);
+  async function finalizeSaveUpdates() {
+    convertBibtex();
 
-      const fields = [
-        "specialization", "teachingExp", "qualifications",
-        "dateOfJoining", "dateOfAssign",
-        "professionalActivity", "facultyParticipation", "projects"
-      ];
-      fields.forEach(id => {
-        const el = document.getElementById(id);
-        formData.append(id, el ? el.value.trim() : "");
-      });
+    const formData = new FormData();
+    formData.append("teacherId", document.getElementById("teacherIdField").value.trim());
+    formData.append("name", document.getElementById("nameField").value.trim());
+    formData.append("email", email);
+    formData.append("department", document.getElementById("departmentField").value.trim());
+    formData.append("specialization", document.getElementById("specialization").value.trim());
+    formData.append("teachingExp", document.getElementById("teachingExp").value.trim());
+    formData.append("qualifications", document.getElementById("qualifications").value.trim());
+    formData.append("dateOfJoining", document.getElementById("dateOfJoining").value.trim());
+    formData.append("dateOfAssign", document.getElementById("dateOfAssign").value.trim());
+    formData.append("research", document.getElementById("researchDetails").value.trim());
+    formData.append("professionalActivity", document.getElementById("professionalActivity").value.trim());
+    formData.append("facultyParticipation", document.getElementById("facultyParticipation").value.trim());
+    formData.append("projects", document.getElementById("projects").value.trim());
 
-      // publications (formatted)
-      const publications = Array.from(document.querySelectorAll("#bibOutput .pub-item"))
-        .map(div => div.textContent.trim())
-        .join("\n");
-      formData.append("publications", publications);
+    const publications = Array.from(document.querySelectorAll("#bibOutput .pub-item"))
+      .map(div => div.textContent.trim())
+      .join("\n");
+    formData.append("publications", publications);
+    formData.append("rawBibtex", document.getElementById("bibInput").value.trim());
 
-      // raw BibTeX input
-      const rawBibtex = document.getElementById("bibInput").value.trim();
-      formData.append("rawBibtex", rawBibtex);
+    const btn = document.getElementById("saveBtn");
+    btn.disabled = true;
+    btn.textContent = "Saving...";
 
-      // Optional: disable save button while request in-flight
-      const btn = document.getElementById("saveBtn");
-      btn.disabled = true;
-      btn.textContent = "Saving...";
-
+    try {
       const res = await fetch(`${apiBase}/update`, {
         method: "POST",
         body: formData
       });
 
       const data = await res.json();
-
-      // handle both HTTP error and JSON status error
       if (!res.ok || (data && data.status === "error")) {
         alert("Update failed: " + (data.message || "unknown error"));
       } else {
-        alert("Faculty updated successfully and stored on blockchain.");
-        await loadFacultyData(); // reload and show updated info
+        alert("Faculty details updated successfully.");
+        await loadFacultyData();
       }
-    } catch (err) {
-      console.error(err);
-      alert("Error communicating with backend.");
     } finally {
-      const btn = document.getElementById("saveBtn");
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = 'Save Changes';
-      }
+      btn.disabled = false;
+      btn.innerHTML = 'Save Changes';
+      pendingSaveAction = null;
     }
   }
 
@@ -341,6 +388,7 @@
     infoBox.innerHTML = `
       <h5 class="mb-3 text-center text-primary"> Faculty Profile (Blockchain Record)</h5>
       <div><b>Name:</b> ${data.name || "—"}</div>
+      <div><b>Teacher ID:</b> ${data.teacherId || "—"}</div>
       <div><b>Email:</b> ${data.email || "—"}</div>
       <div><b>Department:</b> ${data.department || "—"}</div>
       <div><b>Specialization:</b> ${data.specialization || "—"}</div>
@@ -351,8 +399,52 @@
       <div><b>Professional Activity:</b> ${data.professionalActivity || "—"}</div>
       <div><b>Faculty Participation:</b> ${data.facultyParticipation || "—"}</div>
       <div><b>Projects:</b> ${data.projects || "—"}</div>
+      <div><b>Research Details:</b> ${data.researchDetails || data.research || "—"}</div>
       <div><b>Publications:</b><br><pre style="white-space:pre-wrap;background:#fff;padding:8px;border-radius:6px;">${data.publications || "—"}</pre></div>
     `;
+  }
+
+  async function sendOtpForSave() {
+    const targetEmail = document.getElementById("emailField").value.trim();
+    if (!targetEmail) {
+      alert("Faculty email is required for OTP verification.");
+      return;
+    }
+
+    const sendRes = await fetch(`${apiBase}/send-otp?email=${encodeURIComponent(targetEmail)}`, { method: 'POST' });
+    const sendData = await sendRes.json();
+    if (sendData.status !== "success") {
+      throw new Error(sendData.message || "Failed to send OTP");
+    }
+
+    document.getElementById("otpEmailText").innerText = `Enter OTP sent to ${targetEmail}`;
+    document.getElementById("otpModal").style.display = "flex";
+  }
+
+  async function verifyEnteredOtp() {
+    const targetEmail = document.getElementById("emailField").value.trim();
+    const otp = document.getElementById("otpInput").value.trim();
+    if (!otp) {
+      alert("Please enter OTP.");
+      return;
+    }
+
+    const verifyRes = await fetch(`${apiBase}/verify-otp?email=${encodeURIComponent(targetEmail)}&otp=${encodeURIComponent(otp)}`);
+    const verifyData = await verifyRes.json();
+    if (verifyData.status !== "success") {
+      alert(verifyData.message || "Invalid or expired OTP.");
+      return;
+    }
+
+    closeOtpModal();
+    if (pendingSaveAction) {
+      await pendingSaveAction();
+    }
+  }
+
+  function closeOtpModal() {
+    document.getElementById("otpModal").style.display = "none";
+    document.getElementById("otpInput").value = "";
   }
 
   // BibTeX converter

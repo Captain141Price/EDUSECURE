@@ -1,8 +1,11 @@
 package com.example.facultyblockchain.controller;
 
 import com.example.facultyblockchain.model.Block;
+import com.example.facultyblockchain.model.TeacherMasterRecord;
 import com.example.facultyblockchain.service.BlockchainService;
 import com.example.facultyblockchain.service.EmailService;
+import com.example.facultyblockchain.service.LoginBlockchainService;
+import com.example.facultyblockchain.service.TeacherMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,10 +24,17 @@ public class BlockchainController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private TeacherMasterService teacherMasterService;
+
+    @Autowired
+    private LoginBlockchainService loginBlockchainService;
+
     // Add a new faculty block (with formatted & raw BibTeX)
 
     @PostMapping("/add")
     public Map<String, Object> addFaculty(
+            @RequestParam(required = false) String teacherId,
             @RequestParam String name,
             @RequestParam String email,
             @RequestParam String department,
@@ -68,6 +78,28 @@ public class BlockchainController {
                 professionalActivity, facultyParticipation, projects
         );
 
+        if (success) {
+            TeacherMasterRecord masterRecord = new TeacherMasterRecord();
+            masterRecord.setTeacherId(teacherId);
+            masterRecord.setName(name);
+            masterRecord.setEmail(email);
+            masterRecord.setDepartment(department);
+            masterRecord.setStatus("Active");
+            masterRecord.setSpecialization(specialization);
+            masterRecord.setTeachingExperience(teachingExp);
+            masterRecord.setQualifications(qualifications);
+            masterRecord.setDateOfJoining(dateOfJoining);
+            masterRecord.setDateOfAssign(dateOfAssign);
+            masterRecord.setResearchDetails(research);
+            masterRecord.setProfessionalActivities(professionalActivity);
+            masterRecord.setParticipation(facultyParticipation);
+            masterRecord.setProjects(projects);
+            masterRecord.setPublications(publications);
+            masterRecord.setRawBibtex(rawBibtex);
+            teacherMasterService.saveTeacher(masterRecord);
+            loginBlockchainService.ensureUserIfAbsent(name, email, LoginBlockchainService.DEFAULT_TEACHER_PASSWORD, "teacher");
+        }
+
         response.put("status", success ? "success" : "error");
         response.put("message", success ? "Faculty added successfully!" : "Failed to add faculty.");
         return response;
@@ -77,6 +109,10 @@ public class BlockchainController {
 
     @GetMapping("/get")
     public Object getFaculty(@RequestParam String email) {
+        var masterRecord = teacherMasterService.findByEmail(email);
+        if (masterRecord.isPresent()) {
+            return masterRecord.get();
+        }
         Block block = blockchainService.searchByEmail(email);
         if (block == null) {
             return Map.of("status", "error", "message", "Faculty not found!");
@@ -99,6 +135,7 @@ public class BlockchainController {
     @PostMapping("/update")
     public Map<String, Object> updateFaculty(
             @RequestParam String email,
+            @RequestParam(required = false) String teacherId,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String department,
             @RequestParam String dateOfJoining,
@@ -165,6 +202,27 @@ public class BlockchainController {
                 publisher, organization, booktitle,
                 professionalActivity, facultyParticipation, projects
         );
+
+        if (success) {
+            TeacherMasterRecord masterRecord = new TeacherMasterRecord();
+            masterRecord.setTeacherId(teacherId);
+            masterRecord.setName(name);
+            masterRecord.setEmail(email);
+            masterRecord.setDepartment(department);
+            masterRecord.setStatus("Active");
+            masterRecord.setSpecialization(specialization);
+            masterRecord.setTeachingExperience(teachingExp);
+            masterRecord.setQualifications(qualifications);
+            masterRecord.setDateOfJoining(dateOfJoining);
+            masterRecord.setDateOfAssign(dateOfAssign);
+            masterRecord.setResearchDetails(research);
+            masterRecord.setProfessionalActivities(professionalActivity);
+            masterRecord.setParticipation(facultyParticipation);
+            masterRecord.setProjects(projects);
+            masterRecord.setPublications(publications);
+            masterRecord.setRawBibtex(rawBibtex);
+            teacherMasterService.saveTeacher(masterRecord);
+        }
 
         response.put("status", success ? "success" : "error");
         response.put("message", success

@@ -226,6 +226,7 @@
             <div style="font-size: 12px; opacity: 0.8;">Blockchain Secured</div>
         </div>
         <div class="sidebar-nav">
+            <a class="nav-item" href="#" onclick="goToFacultyDetails(); return false;">Faculty Details</a>
             <a class="nav-item active" href="teacher_dashboard.html">Dashboard Home</a>
             <a class="nav-item" href="#" onclick="goToMentorPage('mar.html'); return false;">MAR Review</a>
             <a class="nav-item" href="#" onclick="goToMentorPage('moocs.html'); return false;">MOOCs Review</a>
@@ -257,12 +258,22 @@
         if (!role || role.toLowerCase() !== "teacher" || !sessionToken) {
             window.location.href = "login.html";
         }
-        
+
         document.getElementById("welcomeName").textContent = localStorage.getItem("username") || email;
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = "login.html";
+        async function logout() {
+            try {
+                if (email) {
+                    await fetch(window.location.origin + `/auth/logout?email=${encodeURIComponent(email)}`, {
+                        method: 'POST'
+                    });
+                }
+            } catch (err) {
+                console.error('Logout request failed', err);
+            } finally {
+                localStorage.clear();
+                window.location.href = "login.html";
+            }
         }
 
         async function checkSession() {
@@ -321,6 +332,10 @@
 
         function goToMarks(courseId, dept, sem, type) {
             window.location.href = `marks.html?courseId=${courseId}&dept=${dept}&sem=${sem}&type=${type}`;
+        }
+
+        function goToFacultyDetails() {
+            window.location.href = `edit_faculty.html?email=${encodeURIComponent(email)}`;
         }
 
         function goToMentorPage(page) {

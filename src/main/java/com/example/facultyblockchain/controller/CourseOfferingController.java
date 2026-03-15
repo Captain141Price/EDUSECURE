@@ -48,8 +48,8 @@ public class CourseOfferingController {
     @GetMapping("/students")
     public ResponseEntity<List<StudentExcelModel>> getStudentsForCourse(
             @RequestParam String department,
-            @RequestParam String passingYear) {
-        List<StudentExcelModel> students = studentExcelService.filterStudents(department, passingYear, null);
+            @RequestParam String semester) {
+        List<StudentExcelModel> students = studentExcelService.filterStudents(department, null, semester);
         return ResponseEntity.ok(students);
     }
 

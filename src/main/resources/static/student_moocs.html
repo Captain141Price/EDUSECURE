@@ -262,6 +262,29 @@
             text-decoration: underline;
         }
 
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
         .loading,
         .empty-state {
             text-align: center;
@@ -352,12 +375,13 @@
                                 <th>Date</th>
                                 <th>Credits</th>
                                 <th>Certificate</th>
+                                <th>Status</th>
                                 <th>Tx Hash</th>
                             </tr>
                         </thead>
                         <tbody id="moocsBody">
                             <tr>
-                                <td colspan="6" class="loading">Loading records...</td>
+                                <td colspan="7" class="loading">Loading records...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -372,16 +396,42 @@
         const role = localStorage.getItem("role");
         const email = localStorage.getItem("email");
         const studentName = localStorage.getItem("username");
+        const sessionToken = localStorage.getItem("sessionToken");
 
-        if (!role || role.toLowerCase() !== "student") {
+        if (!role || role.toLowerCase() !== "student" || !sessionToken) {
             window.location.href = "login.html";
         }
 
+        // Verify session with backend
+        async function checkSession() {
+            try {
+                const res = await fetch(window.location.origin + `/auth/verify-session?email=${encodeURIComponent(email)}&token=${encodeURIComponent(sessionToken)}`);
+                if (!res.ok) {
+                    alert("Session conflict: Logged in from another device");
+                    localStorage.clear();
+                    window.location.href = "login.html";
+                }
+            } catch (err) {
+                console.error("Session verification failed", err);
+            }
+        }
+        checkSession();
+
         document.getElementById("welcomeName").textContent = studentName || "Student";
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = "login.html";
+        async function logout() {
+            try {
+                if (email) {
+                    await fetch(window.location.origin + `/auth/logout?email=${encodeURIComponent(email)}`, {
+                        method: 'POST'
+                    });
+                }
+            } catch (err) {
+                console.error('Logout request failed', err);
+            } finally {
+                localStorage.clear();
+                window.location.href = "login.html";
+            }
         }
 
         // FETCH MOOCS RECORDS
@@ -394,7 +444,7 @@
                     tbody.innerHTML = "";
 
                     if (data.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No MOOCs courses submitted yet.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No MOOCs courses submitted yet.</td></tr>`;
                         return;
                     }
 
@@ -409,22 +459,27 @@
                             fileLink = `<a href="${window.location.origin}/uploads/${item.filePath}" target="_blank" class="doc-link">View Cert</a>`;
                         }
 
+                        let statusClass = 'status-pending';
+                        if (item.status === 'APPROVED') statusClass = 'status-approved';
+                        if (item.status === 'REJECTED') statusClass = 'status-rejected';
+
                         tr.innerHTML = `
                             <td style="font-weight:500;">${item.name || '--'}</td>
                             <td>${item.platform || '--'}</td>
                             <td>${item.date || '--'}</td>
                             <td style="font-weight:700; color:var(--primary);">${item.credits || '--'}</td>
                             <td>${fileLink}</td>
+                            <td><span class="status-badge ${statusClass}">${item.status || 'PENDING'}</span></td>
                             <td><span class="hash-tag" title="${item.hash}">${hashDisplay}</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: #ef4444;">Error fetching records.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: #ef4444;">Error fetching records.</td></tr>`;
                 }
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: #ef4444;">Connection error.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: #ef4444;">Connection error.</td></tr>`;
             }
         }
 

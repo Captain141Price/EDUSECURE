@@ -1,6 +1,7 @@
 package com.example.facultyblockchain.service;
 
 import com.example.facultyblockchain.model.LoginBlock;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -13,6 +14,8 @@ import java.util.List;
 public class LoginBlockchainService {
 
     private static final String BASE_PATH = "src/main/resources/blockchain/";
+    public static final String DEFAULT_TEACHER_PASSWORD = "teacher@123";
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     // Load the blockchain based on role
     @SuppressWarnings("unchecked")
@@ -49,13 +52,20 @@ public class LoginBlockchainService {
         System.out.println("addUser called for role: " + role);
         List<LoginBlock> blockchain = loadBlockchain(role);
 
-        String hashedPassword = hash(password);
+        String hashedPassword = encodePassword(password);
         String previousHash = blockchain.isEmpty() ? "0" : blockchain.get(blockchain.size() - 1).getHash();
         LoginBlock block = new LoginBlock(blockchain.size(), name, email, hashedPassword, previousHash);
         blockchain.add(block);
 
         saveBlockchain(role, blockchain);
         return true;
+    }
+
+    public boolean ensureUserIfAbsent(String name, String email, String password, String role) {
+        if (emailExistsInRole(email, role)) {
+            return false;
+        }
+        return addUser(name, email, password, role);
     }
 
     // Verify login credentials against role-specific blockchain
@@ -65,8 +75,6 @@ public class LoginBlockchainService {
 
         List<LoginBlock> blockchain = loadBlockchain(role);
         System.out.println("[LOGIN DEBUG] Blockchain chain size for role '" + role + "': " + blockchain.size());
-
-        String hashedPassword = hash(password);
 
         LoginBlock latestBlock = null;
 
@@ -89,13 +97,13 @@ public class LoginBlockchainService {
 
         // Verify name (loose check: just ignore case and trim) and password against latest block
         boolean nameMatch = latestBlock.getName().trim().equalsIgnoreCase(name.trim());
-        boolean passMatch = latestBlock.getHashedPassword().equals(hashedPassword);
+        boolean passMatch = matchesPassword(password, latestBlock.getHashedPassword());
 
         System.out.println("[LOGIN DEBUG] Name match: " + nameMatch
                 + " | Stored: '" + latestBlock.getName() + "' vs Provided: '" + name + "'");
         System.out.println("[LOGIN DEBUG] Password match: " + passMatch
                 + " | Stored hash: " + latestBlock.getHashedPassword().substring(0, 8) + "..."
-                + " vs Computed hash: " + hashedPassword.substring(0, 8) + "...");
+                + " | Password verified using compatible hash matcher");
 
         // FIX: If the name doesn't match perfectly, but the email and password do, let them in.
         // It's a common UX issue for users to mistype their name slightly (e.g. omitting middle name).
@@ -126,6 +134,19 @@ public class LoginBlockchainService {
         return false;
     }
 
+    public boolean emailExistsInRole(String email, String role) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+
+        for (LoginBlock block : loadBlockchain(role)) {
+            if (email.equalsIgnoreCase(block.getEmail())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Helper to choose the correct file
     private String getFileName(String role) {
         return switch (role.toLowerCase()) {
@@ -150,6 +171,22 @@ public class LoginBlockchainService {
         } catch (Exception e) {
             throw new RuntimeException("Error while hashing", e);
         }
+    }
+
+    private String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
+    private boolean matchesPassword(String rawPassword, String storedPassword) {
+        if (storedPassword == null || storedPassword.isBlank()) {
+            return false;
+        }
+
+        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+
+        return storedPassword.equals(hash(rawPassword));
     }
 
     // public boolean emailExists(String email) {

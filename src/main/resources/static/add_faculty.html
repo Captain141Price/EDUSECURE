@@ -119,6 +119,10 @@
     <h1>Faculty Blockchain Dashboard</h1>
 
     <div class="form-group">
+        <input type="text" id="teacherId" placeholder="Teacher ID">
+    </div>
+
+    <div class="form-group">
         <input type="text" id="name" placeholder="Name">
     </div>
 
@@ -127,7 +131,7 @@
     </div>
 
     <div class="form-group">
-        <input type="password" id="password" placeholder="Password">
+        <input type="text" id="defaultPassword" value="Default password: teacher@123" readonly>
     </div>
 
     <div class="form-group">
@@ -144,39 +148,29 @@
 
 <script>
     const apiBase = window.location.origin + "/api";
-    const authBase = window.location.origin + "/auth";
-
     function saveProfile() {
         const name = document.getElementById('name').value.trim();
+        const teacherId = document.getElementById('teacherId').value.trim();
         const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
         const department = document.getElementById('department').value.trim();
         const dateOfJoining = document.getElementById('joining').value;
 
-        if (!name || !email || !password) {
-            alert("Name, Email, and Password are required!");
+        if (!teacherId || !name || !email) {
+            alert("Teacher ID, Name, and Email are required!");
             return;
         }
 
         // Form data for blockchain faculty info
         const formData1 = new URLSearchParams();
+        formData1.append("teacherId", teacherId);
         formData1.append("name", name);
         formData1.append("email", email);
-        formData1.append("password", password);
         formData1.append("department", department);
         formData1.append("dateOfJoining", dateOfJoining);
         formData1.append("publications", 0);
         formData1.append("research", "");
         formData1.append("professionalActivity", "");
         formData1.append("projects", "");
-
-        // User signup info
-        const signupData = {
-            name: name,
-            email: email,
-            password: password,
-            role: "teacher"
-        };
 
         // First API: add faculty to blockchain
         fetch(`${apiBase}/add`, {
@@ -187,7 +181,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                alert("Faculty information added successfully!");
+                alert("Faculty information added successfully. Default teacher password: teacher@123");
             } else {
                 alert("Error: " + (data.message || "Something went wrong"));
             }
@@ -195,22 +189,6 @@
         .catch(err => {
             console.error("Request failed:", err);
             alert("Error while saving faculty data.");
-        });
-
-        // Second API: user signup
-        fetch(`${authBase}/signup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(signupData),
-            mode: "cors"
-        })
-        .then(async res => {
-            const data = await res.json();
-            alert(data.message || "Signup completed.");
-        })
-        .catch(err => {
-            console.error("Signup error:", err);
-            alert("Error while signing up. Try again later.");
         });
     }
 </script>
